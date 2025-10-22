@@ -19,7 +19,7 @@ import {
   IconUsers,
 } from "@tabler/icons-react"
 
-import { NavDocuments } from "@/components/nav-documents"
+import { NavPessoas } from "@/components/nav-pessoas"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
@@ -41,30 +41,20 @@ const data = {
   },
   navMain: [
     {
-      title: "Dashboard",
+      title: "Pedidos",
       url: "#",
       icon: IconDashboard,
     },
     {
-      title: "Lifecycle",
+      title: "Produtos",
       url: "#",
       icon: IconListDetails,
     },
     {
-      title: "Analytics",
+      title: "Relatórios",
       url: "#",
       icon: IconChartBar,
-    },
-    {
-      title: "Projects",
-      url: "#",
-      icon: IconFolder,
-    },
-    {
-      title: "Team",
-      url: "#",
-      icon: IconUsers,
-    },
+    }
   ],
   navClouds: [
     {
@@ -116,34 +106,34 @@ const data = {
   ],
   navSecondary: [
     {
-      title: "Settings",
+      title: "Configurações",
       url: "#",
       icon: IconSettings,
     },
     {
-      title: "Get Help",
+      title: "Sobre",
       url: "#",
       icon: IconHelp,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
-    },
+    }
   ],
-  documents: [
+  pessoas: [
     {
-      name: "Data Library",
+      name: "Todas as pessoas",
       url: "#",
       icon: IconDatabase,
     },
     {
-      name: "Reports",
+      name: "Funcionários",
       url: "#",
       icon: IconReport,
     },
     {
-      name: "Word Assistant",
+      name: "Clientes",
+      url: "#",
+      icon: IconFileWord,
+    },
+    {
+      name: "Fornecedores",
       url: "#",
       icon: IconFileWord,
     },
@@ -170,7 +160,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
+        <NavPessoas items={data.pessoas} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
