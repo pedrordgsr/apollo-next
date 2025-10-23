@@ -425,7 +425,7 @@ export default function CadastrarFuncionarioPage() {
                           </FieldContent>
                         </Field>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
                           <Field>
                             <FieldLabel htmlFor="bairro">Bairro</FieldLabel>
                             <FieldContent>
