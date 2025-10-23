@@ -119,7 +119,7 @@ const data = {
   pessoas: [
     {
       name: "Todas as pessoas",
-      url: "#",
+      url: "/pessoas",
       icon: IconDatabase,
     },
     {
@@ -129,7 +129,7 @@ const data = {
     },
     {
       name: "Clientes",
-      url: "#",
+      url: "/clientes",
       icon: IconFileWord,
     },
     {
