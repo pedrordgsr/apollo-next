@@ -124,7 +124,7 @@ const data = {
     },
     {
       name: "Funcionários",
-      url: "#",
+      url: "/funcionarios",
       icon: IconReport,
     },
     {
@@ -134,7 +134,7 @@ const data = {
     },
     {
       name: "Fornecedores",
-      url: "#",
+      url: "/fornecedores",
       icon: IconFileWord,
     },
   ],
