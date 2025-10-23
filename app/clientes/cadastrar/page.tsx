@@ -36,92 +36,7 @@ import {
 } from "@/components/ui/select"
 import { toast } from "sonner"
 import { IconArrowLeft, IconLoader2 } from "@tabler/icons-react"
-
-interface ClienteFormData {
-  nome: string
-  tipoPessoa: "FISICA" | "JURIDICA"
-  cpfcnpj: string
-  ie: string
-  email: string
-  telefone: string
-  endereco: string
-  bairro: string
-  cidade: string
-  uf: string
-  cep: string
-  genero: "MASCULINO" | "FEMININO" | "NAO_INFORMAR" | ""
-}
-
-// Função para validar CPF
-function validarCPF(cpf: string): boolean {
-  const cpfLimpo = cpf.replace(/\D/g, "")
-  
-  if (cpfLimpo.length !== 11) return false
-  
-  // Verifica se todos os dígitos são iguais
-  if (/^(\d)\1{10}$/.test(cpfLimpo)) return false
-  
-  // Valida primeiro dígito verificador
-  let soma = 0
-  for (let i = 0; i < 9; i++) {
-    soma += parseInt(cpfLimpo.charAt(i)) * (10 - i)
-  }
-  let resto = (soma * 10) % 11
-  if (resto === 10 || resto === 11) resto = 0
-  if (resto !== parseInt(cpfLimpo.charAt(9))) return false
-  
-  // Valida segundo dígito verificador
-  soma = 0
-  for (let i = 0; i < 10; i++) {
-    soma += parseInt(cpfLimpo.charAt(i)) * (11 - i)
-  }
-  resto = (soma * 10) % 11
-  if (resto === 10 || resto === 11) resto = 0
-  if (resto !== parseInt(cpfLimpo.charAt(10))) return false
-  
-  return true
-}
-
-// Função para validar CNPJ
-function validarCNPJ(cnpj: string): boolean {
-  const cnpjLimpo = cnpj.replace(/\D/g, "")
-  
-  if (cnpjLimpo.length !== 14) return false
-  
-  // Verifica se todos os dígitos são iguais
-  if (/^(\d)\1{13}$/.test(cnpjLimpo)) return false
-  
-  // Valida primeiro dígito verificador
-  let tamanho = cnpjLimpo.length - 2
-  let numeros = cnpjLimpo.substring(0, tamanho)
-  const digitos = cnpjLimpo.substring(tamanho)
-  let soma = 0
-  let pos = tamanho - 7
-  
-  for (let i = tamanho; i >= 1; i--) {
-    soma += parseInt(numeros.charAt(tamanho - i)) * pos--
-    if (pos < 2) pos = 9
-  }
-  
-  let resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11)
-  if (resultado !== parseInt(digitos.charAt(0))) return false
-  
-  // Valida segundo dígito verificador
-  tamanho = tamanho + 1
-  numeros = cnpjLimpo.substring(0, tamanho)
-  soma = 0
-  pos = tamanho - 7
-  
-  for (let i = tamanho; i >= 1; i--) {
-    soma += parseInt(numeros.charAt(tamanho - i)) * pos--
-    if (pos < 2) pos = 9
-  }
-  
-  resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11)
-  if (resultado !== parseInt(digitos.charAt(1))) return false
-  
-  return true
-}
+import { clienteSchema, type ClienteFormData } from "@/lib/validations"
 
 export default function CadastrarClientePage() {
   const { isAuthenticated, loading } = useAuth()
@@ -132,6 +47,7 @@ export default function CadastrarClientePage() {
 
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [errors, setErrors] = useState<Partial<Record<keyof ClienteFormData, string>>>({})
   const [formData, setFormData] = useState<ClienteFormData>({
     nome: "",
     tipoPessoa: "FISICA",
@@ -144,7 +60,7 @@ export default function CadastrarClientePage() {
     cidade: "",
     uf: "",
     cep: "",
-    genero: "",
+    genero: undefined,
   })
 
   useEffect(() => {
@@ -154,87 +70,111 @@ export default function CadastrarClientePage() {
   }, [loading, isAuthenticated, router])
 
   useEffect(() => {
+    const fetchCliente = async () => {
+      setIsLoading(true)
+      try {
+        const response = await api.get(`/clientes/${clienteId}`)
+        const cliente = response.data
+        
+        setFormData({
+          nome: cliente.nome || "",
+          tipoPessoa: cliente.tipoPessoa || "FISICA",
+          cpfcnpj: cliente.cpfCnpj || "",
+          ie: cliente.ie || "",
+          email: cliente.email || "",
+          telefone: cliente.telefone?.toString() || "",
+          endereco: cliente.endereco || "",
+          bairro: cliente.bairro || "",
+          cidade: cliente.cidade || "",
+          uf: cliente.uf || "",
+          cep: cliente.cep?.toString() || "",
+          genero: cliente.genero || undefined,
+        })
+      } catch {
+        toast.error("Erro ao carregar dados do cliente")
+        router.push("/clientes")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
     if (isEditing && isAuthenticated) {
       fetchCliente()
     }
-  }, [clienteId, isAuthenticated])
-
-  const fetchCliente = async () => {
-    setIsLoading(true)
-    try {
-      const response = await api.get(`/clientes/${clienteId}`)
-      const cliente = response.data
-      
-      setFormData({
-        nome: cliente.nome || "",
-        tipoPessoa: cliente.tipoPessoa || "FISICA",
-        cpfcnpj: cliente.cpfCnpj || "",
-        ie: cliente.ie || "",
-        email: cliente.email || "",
-        telefone: cliente.telefone?.toString() || "",
-        endereco: cliente.endereco || "",
-        bairro: cliente.bairro || "",
-        cidade: cliente.cidade || "",
-        uf: cliente.uf || "",
-        cep: cliente.cep?.toString() || "",
-        genero: cliente.genero || "",
-      })
-    } catch (err) {
-      toast.error("Erro ao carregar dados do cliente")
-      router.push("/clientes")
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  }, [clienteId, isAuthenticated, isEditing, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setErrors({})
     
-    // Validação básica
-    if (!formData.nome || !formData.cpfcnpj || !formData.email) {
-      toast.error("Preencha todos os campos obrigatórios")
-      return
-    }
+    // Validação com Zod
+    const result = clienteSchema.safeParse(formData)
 
-    // Validação de CPF/CNPJ
-    const cpfCnpjLimpo = formData.cpfcnpj.replace(/\D/g, "")
-    
-    if (formData.tipoPessoa === "FISICA") {
-      if (cpfCnpjLimpo.length !== 11) {
-        toast.error("CPF deve ter 11 dígitos")
-        return
+    if (!result.success) {
+      const fieldErrors: Partial<Record<keyof ClienteFormData, string>> = {}
+      result.error.issues.forEach((issue) => {
+        if (issue.path[0]) {
+          fieldErrors[issue.path[0] as keyof ClienteFormData] = issue.message
+        }
+      })
+      setErrors(fieldErrors)
+      
+      // Mostra a primeira mensagem de erro
+      const firstError = result.error.issues[0]
+      if (firstError) {
+        toast.error(firstError.message)
       }
-      if (!validarCPF(cpfCnpjLimpo)) {
-        toast.error("CPF inválido. Verifique os dígitos informados.")
-        return
-      }
-    }
-    
-    if (formData.tipoPessoa === "JURIDICA") {
-      if (cpfCnpjLimpo.length !== 14) {
-        toast.error("CNPJ deve ter 14 dígitos")
-        return
-      }
-      if (!validarCNPJ(cpfCnpjLimpo)) {
-        toast.error("CNPJ inválido. Verifique os dígitos informados.")
-        return
-      }
+      return
     }
 
     setIsSaving(true)
     try {
+      const cpfCnpjLimpo = formData.cpfcnpj.replace(/\D/g, "")
+      
+      // Verifica se o CPF/CNPJ já existe no banco
+      try {
+        // Busca todos os clientes (pode precisar ajustar o tamanho da página se houver muitos)
+        const checkResponse = await api.get(`/clientes?page=0&size=1000`)
+        const clientes = checkResponse.data.content || []
+        
+        // Verifica se existe outro cliente com o mesmo CPF/CNPJ
+        const cpfExistente = clientes.find((cliente: { cpfCnpj: string; id?: number }) => {
+          const cpfBanco = cliente.cpfCnpj?.replace(/\D/g, "")
+          // Se estiver editando, ignora o próprio cliente
+          if (isEditing && cliente.id?.toString() === clienteId) {
+            return false
+          }
+          return cpfBanco === cpfCnpjLimpo
+        })
+
+        if (cpfExistente) {
+          const tipoPessoaLabel = formData.tipoPessoa === "FISICA" ? "CPF" : "CNPJ"
+          toast.error(`Este ${tipoPessoaLabel} já está cadastrado no sistema`)
+          setErrors((prev) => ({
+            ...prev,
+            cpfcnpj: `Este ${tipoPessoaLabel} já está cadastrado`
+          }))
+          setIsSaving(false)
+          return
+        }
+      } catch (checkError) {
+        console.error("Erro ao verificar CPF/CNPJ:", checkError)
+        // Continue mesmo se houver erro na verificação (pode ser problema de conectividade)
+        // O backend deve ter sua própria validação de unicidade
+      }
+      
       const payload = {
         nome: formData.nome,
         tipoPessoa: formData.tipoPessoa,
         cpfcnpj: cpfCnpjLimpo,
         ie: formData.ie || null,
         email: formData.email,
-        telefone: parseInt(formData.telefone.replace(/\D/g, "")) || 0,
+        telefone: parseInt(formData.telefone?.replace(/\D/g, "") || "0") || 0,
         endereco: formData.endereco,
         bairro: formData.bairro,
         cidade: formData.cidade,
         uf: formData.uf,
-        cep: parseInt(formData.cep.replace(/\D/g, "")) || 0,
+        cep: parseInt(formData.cep?.replace(/\D/g, "") || "0") || 0,
         genero: formData.genero || null,
       }
 
@@ -264,8 +204,17 @@ export default function CadastrarClientePage() {
     }
   }
 
-  const handleInputChange = (field: keyof ClienteFormData, value: string) => {
+  const handleInputChange = (field: keyof ClienteFormData, value: string | undefined) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
+    
+    // Limpa erro do campo ao digitar
+    if (errors[field]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev }
+        delete newErrors[field]
+        return newErrors
+      })
+    }
   }
 
   if (loading || !isAuthenticated || isLoading) {
@@ -322,7 +271,7 @@ export default function CadastrarClientePage() {
                   <form onSubmit={handleSubmit}>
                     <CardContent>
                       <FieldGroup>
-                        <Field>
+                        <Field data-invalid={!!errors.nome}>
                           <FieldLabel htmlFor="nome">Nome *</FieldLabel>
                           <FieldContent>
                             <Input
@@ -332,11 +281,12 @@ export default function CadastrarClientePage() {
                               placeholder="Nome completo"
                               required
                             />
+                            {errors.nome && <FieldError>{errors.nome}</FieldError>}
                           </FieldContent>
                         </Field>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <Field>
+                          <Field data-invalid={!!errors.tipoPessoa}>
                             <FieldLabel htmlFor="tipoPessoa">Tipo de Pessoa *</FieldLabel>
                             <FieldContent>
                               <Select
@@ -353,10 +303,11 @@ export default function CadastrarClientePage() {
                                   <SelectItem value="JURIDICA">Jurídica</SelectItem>
                                 </SelectContent>
                               </Select>
+                              {errors.tipoPessoa && <FieldError>{errors.tipoPessoa}</FieldError>}
                             </FieldContent>
                           </Field>
 
-                          <Field>
+                          <Field data-invalid={!!errors.cpfcnpj}>
                             <FieldLabel htmlFor="cpfcnpj">
                               {formData.tipoPessoa === "FISICA" ? "CPF" : "CNPJ"} *
                             </FieldLabel>
@@ -372,6 +323,7 @@ export default function CadastrarClientePage() {
                                 }
                                 required
                               />
+                              {errors.cpfcnpj && <FieldError>{errors.cpfcnpj}</FieldError>}
                             </FieldContent>
                           </Field>
 
@@ -391,8 +343,8 @@ export default function CadastrarClientePage() {
                             <FieldLabel htmlFor="genero">Gênero</FieldLabel>
                             <FieldContent>
                               <Select
-                                value={formData.genero}
-                                onValueChange={(value) => handleInputChange("genero", value)}
+                                value={formData.genero || ""}
+                                onValueChange={(value) => handleInputChange("genero", value || undefined)}
                               >
                                 <SelectTrigger>
                                   <SelectValue placeholder="Selecione" />
@@ -406,7 +358,7 @@ export default function CadastrarClientePage() {
                             </FieldContent>
                           </Field>
 
-                          <Field>
+                          <Field data-invalid={!!errors.email}>
                             <FieldLabel htmlFor="email">E-mail *</FieldLabel>
                             <FieldContent>
                               <Input
@@ -417,6 +369,7 @@ export default function CadastrarClientePage() {
                                 placeholder="email@exemplo.com"
                                 required
                               />
+                              {errors.email && <FieldError>{errors.email}</FieldError>}
                             </FieldContent>
                           </Field>
 
@@ -470,7 +423,7 @@ export default function CadastrarClientePage() {
                             </FieldContent>
                           </Field>
 
-                          <Field>
+                          <Field data-invalid={!!errors.uf}>
                             <FieldLabel htmlFor="uf">UF</FieldLabel>
                             <FieldContent>
                               <Input
@@ -480,6 +433,7 @@ export default function CadastrarClientePage() {
                                 placeholder="PR"
                                 maxLength={2}
                               />
+                              {errors.uf && <FieldError>{errors.uf}</FieldError>}
                             </FieldContent>
                           </Field>
 

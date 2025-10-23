@@ -26,19 +26,7 @@ import {
 } from "@/components/ui/field"
 import { toast } from "sonner"
 import { IconArrowLeft, IconLoader2 } from "@tabler/icons-react"
-import { z } from "zod"
-
-const produtoSchema = z.object({
-  nome: z.string().min(1, "Nome é obrigatório"),
-  descricao: z.string().min(1, "Descrição é obrigatória"),
-  precoCusto: z.number().positive("Preço de custo deve ser maior que zero"),
-  precoVenda: z.number().positive("Preço de venda deve ser maior que zero"),
-}).refine((data) => data.precoVenda >= data.precoCusto, {
-  message: "Preço de venda não pode ser menor que o preço de custo",
-  path: ["precoVenda"],
-})
-
-type ProdutoFormData = z.infer<typeof produtoSchema>
+import { produtoSchema, type ProdutoFormData } from "@/lib/validations"
 
 export default function CadastrarProdutoPage() {
   const { isAuthenticated, loading } = useAuth()

@@ -27,62 +27,9 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { toast } from "sonner"
 import { IconArrowLeft, IconLoader2 } from "@tabler/icons-react"
-
-interface FuncionarioFormData {
-  nome: string
-  tipoPessoa: "FISICA" | "JURIDICA"
-  cpfcnpj: string
-  ie: string
-  email: string
-  telefone: string
-  endereco: string
-  bairro: string
-  cidade: string
-  uf: string
-  cep: string
-  dataAdmissao: string
-  cargo: string
-  salario: string
-}
-
-// Função para validar CPF
-function validarCPF(cpf: string): boolean {
-  const cpfLimpo = cpf.replace(/\D/g, "")
-  
-  if (cpfLimpo.length !== 11) return false
-  
-  // Verifica se todos os dígitos são iguais
-  if (/^(\d)\1{10}$/.test(cpfLimpo)) return false
-  
-  // Valida primeiro dígito verificador
-  let soma = 0
-  for (let i = 0; i < 9; i++) {
-    soma += parseInt(cpfLimpo.charAt(i)) * (10 - i)
-  }
-  let resto = (soma * 10) % 11
-  if (resto === 10 || resto === 11) resto = 0
-  if (resto !== parseInt(cpfLimpo.charAt(9))) return false
-  
-  // Valida segundo dígito verificador
-  soma = 0
-  for (let i = 0; i < 10; i++) {
-    soma += parseInt(cpfLimpo.charAt(i)) * (11 - i)
-  }
-  resto = (soma * 10) % 11
-  if (resto === 10 || resto === 11) resto = 0
-  if (resto !== parseInt(cpfLimpo.charAt(10))) return false
-  
-  return true
-}
+import { funcionarioSchema, type FuncionarioFormData } from "@/lib/validations"
 
 export default function CadastrarFuncionarioPage() {
   const { isAuthenticated, loading } = useAuth()
@@ -93,11 +40,10 @@ export default function CadastrarFuncionarioPage() {
 
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [errors, setErrors] = useState<Partial<Record<keyof FuncionarioFormData, string>>>({})
   const [formData, setFormData] = useState<FuncionarioFormData>({
     nome: "",
-    tipoPessoa: "FISICA",
     cpfcnpj: "",
-    ie: "",
     email: "",
     telefone: "",
     endereco: "",
@@ -117,72 +63,71 @@ export default function CadastrarFuncionarioPage() {
   }, [loading, isAuthenticated, router])
 
   useEffect(() => {
+    const fetchFuncionario = async () => {
+      setIsLoading(true)
+      try {
+        const response = await api.get(`/funcionarios/${funcionarioId}`)
+        const funcionario = response.data
+        
+        // Formata a data de ISO para dd/mm/yyyy
+        let dataAdmissaoFormatada = ""
+        if (funcionario.dataAdmissao) {
+          const data = new Date(funcionario.dataAdmissao)
+          const dia = String(data.getDate()).padStart(2, '0')
+          const mes = String(data.getMonth() + 1).padStart(2, '0')
+          const ano = data.getFullYear()
+          dataAdmissaoFormatada = `${dia}/${mes}/${ano}`
+        }
+        
+        setFormData({
+          nome: funcionario.nome || "",
+          cpfcnpj: funcionario.cpfCnpj || "",
+          email: funcionario.email || "",
+          telefone: funcionario.telefone?.toString() || "",
+          endereco: funcionario.endereco || "",
+          bairro: funcionario.bairro || "",
+          cidade: funcionario.cidade || "",
+          uf: funcionario.uf || "",
+          cep: funcionario.cep?.toString() || "",
+          dataAdmissao: dataAdmissaoFormatada,
+          cargo: funcionario.cargo || "",
+          salario: funcionario.salario?.toString() || "",
+        })
+      } catch {
+        toast.error("Erro ao carregar dados do funcionário")
+        router.push("/funcionarios")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
     if (isEditing && isAuthenticated) {
       fetchFuncionario()
     }
-  }, [funcionarioId, isAuthenticated])
-
-  const fetchFuncionario = async () => {
-    setIsLoading(true)
-    try {
-      const response = await api.get(`/funcionarios/${funcionarioId}`)
-      const funcionario = response.data
-      
-      // Formata a data de ISO para dd/mm/yyyy
-      let dataAdmissaoFormatada = ""
-      if (funcionario.dataAdmissao) {
-        const data = new Date(funcionario.dataAdmissao)
-        const dia = String(data.getDate()).padStart(2, '0')
-        const mes = String(data.getMonth() + 1).padStart(2, '0')
-        const ano = data.getFullYear()
-        dataAdmissaoFormatada = `${dia}/${mes}/${ano}`
-      }
-      
-      setFormData({
-        nome: funcionario.nome || "",
-        tipoPessoa: funcionario.tipoPessoa || "FISICA",
-        cpfcnpj: funcionario.cpfCnpj || "",
-        ie: funcionario.ie || "",
-        email: funcionario.email || "",
-        telefone: funcionario.telefone?.toString() || "",
-        endereco: funcionario.endereco || "",
-        bairro: funcionario.bairro || "",
-        cidade: funcionario.cidade || "",
-        uf: funcionario.uf || "",
-        cep: funcionario.cep?.toString() || "",
-        dataAdmissao: dataAdmissaoFormatada,
-        cargo: funcionario.cargo || "",
-        salario: funcionario.salario?.toString() || "",
-      })
-    } catch (err) {
-      toast.error("Erro ao carregar dados do funcionário")
-      router.push("/funcionarios")
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  }, [funcionarioId, isAuthenticated, isEditing, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setErrors({})
     
-    // Validação básica
-    if (!formData.nome || !formData.cpfcnpj || !formData.email || !formData.cargo || !formData.dataAdmissao || !formData.salario) {
-      toast.error("Preencha todos os campos obrigatórios")
-      return
-    }
+    // Validação com Zod
+    const result = funcionarioSchema.safeParse(formData)
 
-    // Validação de CPF
-    const cpfLimpo = formData.cpfcnpj.replace(/\D/g, "")
-    
-    if (formData.tipoPessoa === "FISICA") {
-      if (cpfLimpo.length !== 11) {
-        toast.error("CPF deve ter 11 dígitos")
-        return
+    if (!result.success) {
+      const fieldErrors: Partial<Record<keyof FuncionarioFormData, string>> = {}
+      result.error.issues.forEach((issue) => {
+        if (issue.path[0]) {
+          fieldErrors[issue.path[0] as keyof FuncionarioFormData] = issue.message
+        }
+      })
+      setErrors(fieldErrors)
+      
+      // Mostra a primeira mensagem de erro
+      const firstError = result.error.issues[0]
+      if (firstError) {
+        toast.error(firstError.message)
       }
-      if (!validarCPF(cpfLimpo)) {
-        toast.error("CPF inválido. Verifique os dígitos informados.")
-        return
-      }
+      return
     }
 
     setIsSaving(true)
@@ -197,18 +142,20 @@ export default function CadastrarFuncionarioPage() {
         }
       }
 
+      const cpfLimpo = formData.cpfcnpj.replace(/\D/g, "")
+
       const payload = {
         nome: formData.nome,
-        tipoPessoa: formData.tipoPessoa,
+        tipoPessoa: "FISICA" as const,
         cpfcnpj: cpfLimpo,
-        ie: formData.ie || null,
+        ie: null,
         email: formData.email,
-        telefone: parseInt(formData.telefone.replace(/\D/g, "")) || 0,
+        telefone: parseInt(formData.telefone?.replace(/\D/g, "") || "0") || 0,
         endereco: formData.endereco,
         bairro: formData.bairro,
         cidade: formData.cidade,
         uf: formData.uf,
-        cep: parseInt(formData.cep.replace(/\D/g, "")) || 0,
+        cep: parseInt(formData.cep?.replace(/\D/g, "") || "0") || 0,
         dataAdmissao: dataAdmissaoISO,
         cargo: formData.cargo,
         salario: parseFloat(formData.salario) || 0,
@@ -240,8 +187,17 @@ export default function CadastrarFuncionarioPage() {
     }
   }
 
-  const handleInputChange = (field: keyof FuncionarioFormData, value: string) => {
+  const handleInputChange = (field: keyof FuncionarioFormData, value: string | undefined) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
+    
+    // Limpa erro do campo ao digitar
+    if (errors[field]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev }
+        delete newErrors[field]
+        return newErrors
+      })
+    }
   }
 
   // Função para formatar data dd/mm/yyyy
@@ -316,7 +272,7 @@ export default function CadastrarFuncionarioPage() {
                   <form onSubmit={handleSubmit}>
                     <CardContent>
                       <FieldGroup>
-                        <Field>
+                        <Field data-invalid={!!errors.nome}>
                           <FieldLabel htmlFor="nome">Nome *</FieldLabel>
                           <FieldContent>
                             <Input
@@ -326,11 +282,12 @@ export default function CadastrarFuncionarioPage() {
                               placeholder="Nome completo"
                               required
                             />
+                            {errors.nome && <FieldError>{errors.nome}</FieldError>}
                           </FieldContent>
                         </Field>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <Field>
+                          <Field data-invalid={!!errors.cpfcnpj}>
                             <FieldLabel htmlFor="cpfcnpj">CPF *</FieldLabel>
                             <FieldContent>
                               <Input
@@ -340,10 +297,11 @@ export default function CadastrarFuncionarioPage() {
                                 placeholder="000.000.000-00"
                                 required
                               />
+                              {errors.cpfcnpj && <FieldError>{errors.cpfcnpj}</FieldError>}
                             </FieldContent>
                           </Field>
 
-                          <Field>
+                          <Field data-invalid={!!errors.cargo}>
                             <FieldLabel htmlFor="cargo">Cargo *</FieldLabel>
                             <FieldContent>
                               <Input
@@ -353,10 +311,11 @@ export default function CadastrarFuncionarioPage() {
                                 placeholder="Ex: Caixa, Gerente"
                                 required
                               />
+                              {errors.cargo && <FieldError>{errors.cargo}</FieldError>}
                             </FieldContent>
                           </Field>
 
-                          <Field>
+                          <Field data-invalid={!!errors.salario}>
                             <FieldLabel htmlFor="salario">Salário (R$) *</FieldLabel>
                             <FieldContent>
                               <Input
@@ -368,10 +327,11 @@ export default function CadastrarFuncionarioPage() {
                                 placeholder="0.00"
                                 required
                               />
+                              {errors.salario && <FieldError>{errors.salario}</FieldError>}
                             </FieldContent>
                           </Field>
 
-                          <Field>
+                          <Field data-invalid={!!errors.dataAdmissao}>
                             <FieldLabel htmlFor="dataAdmissao">Data de Admissão *</FieldLabel>
                             <FieldContent>
                               <Input
@@ -383,10 +343,11 @@ export default function CadastrarFuncionarioPage() {
                                 maxLength={10}
                                 required
                               />
+                              {errors.dataAdmissao && <FieldError>{errors.dataAdmissao}</FieldError>}
                             </FieldContent>
                           </Field>
 
-                          <Field>
+                          <Field data-invalid={!!errors.email}>
                             <FieldLabel htmlFor="email">E-mail *</FieldLabel>
                             <FieldContent>
                               <Input
@@ -397,6 +358,7 @@ export default function CadastrarFuncionarioPage() {
                                 placeholder="email@exemplo.com"
                                 required
                               />
+                              {errors.email && <FieldError>{errors.email}</FieldError>}
                             </FieldContent>
                           </Field>
 
