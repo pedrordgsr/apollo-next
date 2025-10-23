@@ -88,6 +88,10 @@ export default function ProdutosPage() {
     }
   }
 
+  const handleRefresh = () => {
+    fetchProdutos(page)
+  }
+
   if (loading || !isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -131,6 +135,7 @@ export default function ProdutosPage() {
                 totalElements={totalElements}
                 isLoading={isLoading}
                 onPageChange={setPage}
+                onRefresh={handleRefresh}
               />
             </div>
           </div>

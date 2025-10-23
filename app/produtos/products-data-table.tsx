@@ -18,10 +18,15 @@ import {
   IconChevronsLeft,
   IconChevronsRight,
   IconLayoutColumns,
+  IconPencil,
   IconPlus,
   IconSearch,
+  IconToggleLeft,
+  IconToggleRight,
 } from "@tabler/icons-react"
 import Link from "next/link"
+import { toast } from "sonner"
+import { api } from "@/lib/api"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -58,13 +63,17 @@ interface Produto {
   precoVenda: number
 }
 
-const columns: ColumnDef<Produto>[] = [
+const createColumns = (onRefresh: () => void): ColumnDef<Produto>[] => [
   {
     accessorKey: "id",
-    header: "ID",
+    header: "SKU",
     cell: ({ row }) => (
       <div className="w-16 font-medium">{row.getValue("id")}</div>
     ),
+    filterFn: (row, id, value) => {
+      const sku = row.getValue(id)?.toString() || ""
+      return sku.startsWith(value)
+    },
   },
   {
     accessorKey: "nome",
@@ -142,7 +151,77 @@ const columns: ColumnDef<Produto>[] = [
       return <div className="text-right font-medium">{formatted}</div>
     },
   },
+  {
+    id: "acoes",
+    header: () => <div className="text-center">Ações</div>,
+    cell: ({ row }) => {
+      const produto = row.original
+      return <ProductActions produto={produto} onRefresh={onRefresh} />
+    },
+  },
 ]
+
+interface ProductActionsProps {
+  produto: Produto
+  onRefresh: () => void
+}
+
+function ProductActions({ produto, onRefresh }: ProductActionsProps) {
+  const [isToggling, setIsToggling] = React.useState(false)
+
+  const handleToggleStatus = async () => {
+    setIsToggling(true)
+    try {
+      await api.post(`/api/produtos/status/${produto.id}`)
+      toast.success(
+        `Produto ${produto.status === "ATIVO" ? "inativado" : "ativado"} com sucesso!`
+      )
+      onRefresh()
+    } catch (err) {
+      if (err && typeof err === "object" && "response" in err) {
+        const axiosError = err as {
+          response?: { status?: number; data?: { message?: string } }
+        }
+        if (axiosError.response?.status === 401) {
+          toast.error("Sessão expirada. Faça login novamente.")
+        } else {
+          toast.error("Erro ao alterar status do produto")
+        }
+      } else {
+        toast.error("Erro ao alterar status do produto")
+      }
+    } finally {
+      setIsToggling(false)
+    }
+  }
+
+  return (
+    <div className="flex items-center justify-end gap-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleToggleStatus}
+        disabled={isToggling}
+        title={produto.status === "ATIVO" ? "Inativar produto" : "Ativar produto"}
+      >
+        {produto.status === "ATIVO" ? (
+          <IconToggleRight className="size-4 text-green-600" />
+        ) : (
+          <IconToggleLeft className="size-4 text-gray-400" />
+        )}
+        <span className="sr-only">
+          {produto.status === "ATIVO" ? "Inativar" : "Ativar"} produto
+        </span>
+      </Button>
+      <Button asChild variant="ghost" size="sm">
+        <Link href={`/produtos/cadastrar?id=${produto.id}`}>
+          <IconPencil className="size-4" />
+          <span className="sr-only">Editar produto</span>
+        </Link>
+      </Button>
+    </div>
+  )
+}
 
 interface ProductsDataTableProps {
   data: Produto[]
@@ -151,6 +230,7 @@ interface ProductsDataTableProps {
   totalElements: number
   isLoading: boolean
   onPageChange: (page: number) => void
+  onRefresh: () => void
 }
 
 export function ProductsDataTable({
@@ -160,13 +240,18 @@ export function ProductsDataTable({
   totalElements,
   isLoading,
   onPageChange,
+  onRefresh,
 }: ProductsDataTableProps) {
-  const [sorting, setSorting] = React.useState<SortingState>([])
+  const [sorting, setSorting] = React.useState<SortingState>([
+    { id: "id", desc: false }
+  ])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   )
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({})
+
+  const columns = React.useMemo(() => createColumns(onRefresh), [onRefresh])
 
   const table = useReactTable({
     data,
@@ -193,16 +278,29 @@ export function ProductsDataTable({
   return (
     <div className="w-full space-y-4 px-4 lg:px-6">
       <div className="flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <Input
-            placeholder="Filtrar por nome..."
-            value={(table.getColumn("nome")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("nome")?.setFilterValue(event.target.value)
-            }
-            className="pl-9"
-          />
+        <div className="flex items-center gap-2 flex-1">
+          <div className="relative flex-1 max-w-sm">
+            <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              placeholder="Filtrar por nome..."
+              value={(table.getColumn("nome")?.getFilterValue() as string) ?? ""}
+              onChange={(event) =>
+                table.getColumn("nome")?.setFilterValue(event.target.value)
+              }
+              className="pl-9"
+            />
+          </div>
+          <div className="relative flex-1 max-w-[200px]">
+            <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              placeholder="Filtrar por SKU..."
+              value={(table.getColumn("id")?.getFilterValue() as string) ?? ""}
+              onChange={(event) =>
+                table.getColumn("id")?.setFilterValue(event.target.value)
+              }
+              className="pl-9"
+            />
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Button asChild size="sm">
