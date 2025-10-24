@@ -1,5 +1,35 @@
 "use client"
 
+import { useEffect, useState } from "react"
+import { api } from "@/lib/api"
+
+// Função para buscar os dados do usuário atual
+export const getCurrentUser = async () => {
+  try {
+    // Obtém o ID do usuário do localStorage
+    const userId = localStorage.getItem("usuarioId")
+    if (!userId) {
+      throw new Error("ID do usuário não encontrado no localStorage.")
+    }
+
+    // Faz a requisição para buscar os dados do usuário
+    const response = await api.get(`/funcionarios/${userId}`)
+    const userData = response.data
+    console.log("Dados do usuário obtidos:", userData)
+
+    // Retorna o nome e o email do usuário
+    return {
+      name: userData.nome,
+      email: userData.email,
+    }
+  } catch (error) {
+    console.error("Erro ao buscar os dados do usuário:", error)
+    throw error
+  }
+}
+
+
+
 import * as React from "react"
 import {
   IconCamera,
@@ -34,11 +64,6 @@ import {
 } from "@/components/ui/sidebar"
 
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: [
     {
       title: "Pedidos",
@@ -141,6 +166,20 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const [user, setUser] = useState({ name: "", email: "" })
+
+ useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userData = await getCurrentUser()
+        setUser(userData)
+      } catch (error) {
+        console.error("Erro ao carregar os dados do usuário:", error)
+      }
+    }
+
+    fetchUser()
+  }, [])
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -164,7 +203,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user} />
       </SidebarFooter>
     </Sidebar>
   )
