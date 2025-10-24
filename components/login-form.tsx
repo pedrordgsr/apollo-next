@@ -34,6 +34,7 @@ export function LoginForm({
       localStorage.setItem("token", data.token)
       localStorage.setItem("usuarioId", data.usuarioId.toString())
       localStorage.setItem("username", data.username)
+      localStorage.setItem("funcionarioId", data.funcionarioId.toString())
 
       // Redirecionar para dashboard
       router.push("/dashboard")

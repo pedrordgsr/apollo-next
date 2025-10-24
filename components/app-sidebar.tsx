@@ -7,7 +7,7 @@ import { api } from "@/lib/api"
 export const getCurrentUser = async () => {
   try {
     // Obtém o ID do usuário do localStorage
-    const userId = localStorage.getItem("usuarioId")
+    const userId = localStorage.getItem("funcionarioId")
     if (!userId) {
       throw new Error("ID do usuário não encontrado no localStorage.")
     }

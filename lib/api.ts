@@ -37,6 +37,7 @@ export interface LoginResponse {
   type: string
   username: string
   usuarioId: number
+  funcionarioId: number
 }
 
 // Função de login
