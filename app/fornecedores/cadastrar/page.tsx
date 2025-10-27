@@ -307,20 +307,21 @@ export default function CadastrarFornecedorPage() {
                             </FieldContent>
                           </Field>
 
-                          <Field>
-                            <FieldLabel htmlFor="tipoFornecedor">Tipo Fornecedor</FieldLabel>
+                          <Field data-invalid={!!errors.tipoFornecedor}>
+                            <FieldLabel htmlFor="tipoFornecedor">Tipo Fornecedor *</FieldLabel>
                             <FieldContent>
                               <Input
                                 id="tipoFornecedor"
                                 value={formData.tipoFornecedor}
                                 onChange={(e) => handleInputChange("tipoFornecedor", e.target.value)}
-                                placeholder="Ex: Alimentos e Bebidas"
+                                placeholder="Digite o tipo de fornecedor"
                               />
+                              {errors.tipoFornecedor && <FieldError>{errors.tipoFornecedor}</FieldError>}
                             </FieldContent>
                           </Field>
 
                           <Field data-invalid={!!errors.email}>
-                            <FieldLabel htmlFor="email">E-mail *</FieldLabel>
+                            <FieldLabel htmlFor="email">E-mail</FieldLabel>
                             <FieldContent>
                               <Input
                                 id="email"
@@ -328,7 +329,6 @@ export default function CadastrarFornecedorPage() {
                                 value={formData.email}
                                 onChange={(e) => handleInputChange("email", e.target.value)}
                                 placeholder="email@exemplo.com"
-                                required
                               />
                               {errors.email && <FieldError>{errors.email}</FieldError>}
                             </FieldContent>

@@ -348,7 +348,7 @@ export default function CadastrarFuncionarioPage() {
                           </Field>
 
                           <Field data-invalid={!!errors.email}>
-                            <FieldLabel htmlFor="email">E-mail *</FieldLabel>
+                            <FieldLabel htmlFor="email">E-mail</FieldLabel>
                             <FieldContent>
                               <Input
                                 id="email"
@@ -356,7 +356,6 @@ export default function CadastrarFuncionarioPage() {
                                 value={formData.email}
                                 onChange={(e) => handleInputChange("email", e.target.value)}
                                 placeholder="email@exemplo.com"
-                                required
                               />
                               {errors.email && <FieldError>{errors.email}</FieldError>}
                             </FieldContent>
