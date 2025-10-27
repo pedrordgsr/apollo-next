@@ -340,11 +340,12 @@ export default function CadastrarClientePage() {
                           </Field>
 
                           <Field>
-                            <FieldLabel htmlFor="genero">Gênero</FieldLabel>
+                            <FieldLabel htmlFor="genero">Gênero *</FieldLabel>
                             <FieldContent>
                               <Select
                                 value={formData.genero || ""}
                                 onValueChange={(value) => handleInputChange("genero", value || undefined)}
+                                required
                               >
                                 <SelectTrigger>
                                   <SelectValue placeholder="Selecione" />
@@ -359,7 +360,7 @@ export default function CadastrarClientePage() {
                           </Field>
 
                           <Field data-invalid={!!errors.email}>
-                            <FieldLabel htmlFor="email">E-mail *</FieldLabel>
+                            <FieldLabel htmlFor="email">E-mail</FieldLabel>
                             <FieldContent>
                               <Input
                                 id="email"
@@ -367,7 +368,6 @@ export default function CadastrarClientePage() {
                                 value={formData.email}
                                 onChange={(e) => handleInputChange("email", e.target.value)}
                                 placeholder="email@exemplo.com"
-                                required
                               />
                               {errors.email && <FieldError>{errors.email}</FieldError>}
                             </FieldContent>
