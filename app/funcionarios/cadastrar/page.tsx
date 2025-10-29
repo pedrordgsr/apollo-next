@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
@@ -31,7 +31,7 @@ import { toast } from "sonner"
 import { IconArrowLeft, IconLoader2 } from "@tabler/icons-react"
 import { funcionarioSchema, type FuncionarioFormData } from "@/lib/validations"
 
-export default function CadastrarFuncionarioPage() {
+function CadastrarFuncionarioContent() {
   const { isAuthenticated, loading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -462,5 +462,22 @@ export default function CadastrarFuncionarioPage() {
         </div>
       </SidebarInset>
     </SidebarProvider>
+  )
+}
+
+export default function CadastrarFuncionarioPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="flex flex-col items-center gap-2">
+            <IconLoader2 className="size-8 animate-spin text-muted-foreground" />
+            <p className="text-muted-foreground">Carregando...</p>
+          </div>
+        </div>
+      }
+    >
+      <CadastrarFuncionarioContent />
+    </Suspense>
   )
 }
