@@ -17,6 +17,7 @@ import {
   IconChevronRight,
   IconChevronsLeft,
   IconChevronsRight,
+  IconDownload,
   IconLayoutColumns,
   IconPencil,
   IconPlus,
@@ -27,6 +28,7 @@ import {
 import Link from "next/link"
 import { toast } from "sonner"
 import { api } from "@/lib/api"
+import { exportToExcel } from "@/lib/exportToExcel"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -312,6 +314,35 @@ export function ClientesDataTable({
 
   const columns = React.useMemo(() => createColumns(onRefresh), [onRefresh])
 
+  const handleExportToExcel = () => {
+    // Prepara os dados para exportação, removendo campos desnecessários
+    const dataToExport = data.map(cliente => ({
+      ID: cliente.id,
+      Nome: cliente.nome,
+      "Tipo Pessoa": cliente.tipoPessoa,
+      "CPF/CNPJ": cliente.cpfCnpj,
+      IE: cliente.ie || "-",
+      Email: cliente.email,
+      Telefone: cliente.telefone,
+      Endereço: cliente.endereco,
+      Bairro: cliente.bairro,
+      Cidade: cliente.cidade,
+      UF: cliente.uf,
+      CEP: cliente.cep,
+      Categoria: cliente.categoria,
+      Gênero: cliente.genero,
+      Status: cliente.status,
+      "Data de Cadastro": cliente.dataCadastro,
+    }))
+
+    const success = exportToExcel(dataToExport, "clientes", "Clientes")
+    if (success) {
+      toast.success("Dados exportados com sucesso!")
+    } else {
+      toast.error("Erro ao exportar dados")
+    }
+  }
+
   const table = useReactTable({
     data,
     columns,
@@ -362,6 +393,15 @@ export function ClientesDataTable({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleExportToExcel}
+            disabled={isLoading || data.length === 0}
+          >
+            <IconDownload className="mr-2 size-4" />
+            Exportar
+          </Button>
           <Button asChild size="sm">
             <Link href="/clientes/cadastrar">
               <IconPlus className="mr-2 size-4" />

@@ -17,6 +17,7 @@ import {
   IconChevronRight,
   IconChevronsLeft,
   IconChevronsRight,
+  IconDownload,
   IconLayoutColumns,
   IconPencil,
   IconPlus,
@@ -27,6 +28,7 @@ import {
 import Link from "next/link"
 import { toast } from "sonner"
 import { api } from "@/lib/api"
+import { exportToExcel } from "@/lib/exportToExcel"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -308,6 +310,34 @@ export function FornecedoresDataTable({
 
   const columns = React.useMemo(() => createColumns(onRefresh), [onRefresh])
 
+  const handleExportToExcel = () => {
+    const dataToExport = data.map(fornecedor => ({
+      ID: fornecedor.id,
+      Nome: fornecedor.nome,
+      "Tipo Pessoa": fornecedor.tipoPessoa,
+      "CPF/CNPJ": fornecedor.cpfCnpj,
+      IE: fornecedor.ie || "-",
+      Email: fornecedor.email,
+      Telefone: fornecedor.telefone,
+      Endereço: fornecedor.endereco,
+      Bairro: fornecedor.bairro,
+      Cidade: fornecedor.cidade,
+      UF: fornecedor.uf,
+      CEP: fornecedor.cep,
+      Categoria: fornecedor.categoria,
+      "Tipo Fornecedor": fornecedor.tipoFornecedor,
+      Status: fornecedor.status,
+      "Data de Cadastro": fornecedor.dataCadastro,
+    }))
+
+    const success = exportToExcel(dataToExport, "fornecedores", "Fornecedores")
+    if (success) {
+      toast.success("Dados exportados com sucesso!")
+    } else {
+      toast.error("Erro ao exportar dados")
+    }
+  }
+
   const table = useReactTable({
     data,
     columns,
@@ -358,6 +388,15 @@ export function FornecedoresDataTable({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleExportToExcel}
+            disabled={isLoading || data.length === 0}
+          >
+            <IconDownload className="mr-2 size-4" />
+            Exportar
+          </Button>
           <Button asChild size="sm">
             <Link href="/fornecedores/cadastrar">
               <IconPlus className="mr-2 size-4" />

@@ -17,6 +17,7 @@ import {
   IconChevronRight,
   IconChevronsLeft,
   IconChevronsRight,
+  IconDownload,
   IconLayoutColumns,
   IconPencil,
   IconPlus,
@@ -27,6 +28,7 @@ import {
 import Link from "next/link"
 import { toast } from "sonner"
 import { api } from "@/lib/api"
+import { exportToExcel } from "@/lib/exportToExcel"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -328,6 +330,37 @@ export function FuncionariosDataTable({
 
   const columns = React.useMemo(() => createColumns(onRefresh), [onRefresh])
 
+  const handleExportToExcel = () => {
+    const dataToExport = data.map(funcionario => ({
+      ID: funcionario.id,
+      Nome: funcionario.nome,
+      "Tipo Pessoa": funcionario.tipoPessoa,
+      "CPF/CNPJ": funcionario.cpfCnpj,
+      IE: funcionario.ie || "-",
+      Email: funcionario.email,
+      Telefone: funcionario.telefone,
+      Endereço: funcionario.endereco,
+      Bairro: funcionario.bairro,
+      Cidade: funcionario.cidade,
+      UF: funcionario.uf,
+      CEP: funcionario.cep,
+      Categoria: funcionario.categoria,
+      Cargo: funcionario.cargo,
+      Salário: funcionario.salario,
+      "Data de Admissão": funcionario.dataAdmissao,
+      "Data de Demissão": funcionario.dataDemissao || "-",
+      Status: funcionario.status,
+      "Data de Cadastro": funcionario.dataCadastro,
+    }))
+
+    const success = exportToExcel(dataToExport, "funcionarios", "Funcionários")
+    if (success) {
+      toast.success("Dados exportados com sucesso!")
+    } else {
+      toast.error("Erro ao exportar dados")
+    }
+  }
+
   const table = useReactTable({
     data,
     columns,
@@ -378,6 +411,15 @@ export function FuncionariosDataTable({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleExportToExcel}
+            disabled={isLoading || data.length === 0}
+          >
+            <IconDownload className="mr-2 size-4" />
+            Exportar
+          </Button>
           <Button asChild size="sm">
             <Link href="/funcionarios/cadastrar">
               <IconPlus className="mr-2 size-4" />

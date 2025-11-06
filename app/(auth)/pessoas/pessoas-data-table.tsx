@@ -17,9 +17,12 @@ import {
   IconChevronRight,
   IconChevronsLeft,
   IconChevronsRight,
+  IconDownload,
   IconLayoutColumns,
   IconSearch,
 } from "@tabler/icons-react"
+import { toast } from "sonner"
+import { exportToExcel } from "@/lib/exportToExcel"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -237,6 +240,33 @@ export function PessoasDataTable({
 
   const columns = React.useMemo(() => createColumns(), [])
 
+  const handleExportToExcel = () => {
+    const dataToExport = data.map(pessoa => ({
+      ID: pessoa.id,
+      Nome: pessoa.nome,
+      "Tipo Pessoa": pessoa.tipoPessoa,
+      "CPF/CNPJ": pessoa.cpfCnpj,
+      IE: pessoa.ie || "-",
+      Email: pessoa.email,
+      Telefone: pessoa.telefone,
+      Endereço: pessoa.endereco,
+      Bairro: pessoa.bairro,
+      Cidade: pessoa.cidade,
+      UF: pessoa.uf,
+      CEP: pessoa.cep,
+      Categoria: pessoa.categoria,
+      Status: pessoa.status,
+      "Data de Cadastro": pessoa.dataCadastro,
+    }))
+
+    const success = exportToExcel(dataToExport, "pessoas", "Pessoas")
+    if (success) {
+      toast.success("Dados exportados com sucesso!")
+    } else {
+      toast.error("Erro ao exportar dados")
+    }
+  }
+
   const table = useReactTable({
     data,
     columns,
@@ -287,6 +317,15 @@ export function PessoasDataTable({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleExportToExcel}
+            disabled={isLoading || data.length === 0}
+          >
+            <IconDownload className="mr-2 size-4" />
+            Exportar
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
