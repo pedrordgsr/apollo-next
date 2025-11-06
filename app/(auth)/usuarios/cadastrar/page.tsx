@@ -27,23 +27,32 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { toast } from "sonner"
 import { IconArrowLeft, IconLoader2 } from "@tabler/icons-react"
-import { funcionarioSchema, type FuncionarioFormData } from "@/lib/validations"
+import { clienteSchema, type ClienteFormData } from "@/lib/validations"
 
-function CadastrarFuncionarioContent() {
+function CadastrarClienteContent() {
   const { isAuthenticated, loading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const funcionarioId = searchParams.get("id")
-  const isEditing = !!funcionarioId
+  const clienteId = searchParams.get("id")
+  const isEditing = !!clienteId
 
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [errors, setErrors] = useState<Partial<Record<keyof FuncionarioFormData, string>>>({})
-  const [formData, setFormData] = useState<FuncionarioFormData>({
+  const [errors, setErrors] = useState<Partial<Record<keyof ClienteFormData, string>>>({})
+  const [formData, setFormData] = useState<ClienteFormData>({
     nome: "",
+    tipoPessoa: "FISICA",
     cpfcnpj: "",
+    ie: "",
     email: "",
     telefone: "",
     endereco: "",
@@ -51,9 +60,7 @@ function CadastrarFuncionarioContent() {
     cidade: "",
     uf: "",
     cep: "",
-    dataAdmissao: "",
-    cargo: "",
-    salario: "",
+    genero: "NAO_INFORMAR",
   })
 
   useEffect(() => {
@@ -63,61 +70,51 @@ function CadastrarFuncionarioContent() {
   }, [loading, isAuthenticated, router])
 
   useEffect(() => {
-    const fetchFuncionario = async () => {
+    const fetchCliente = async () => {
       setIsLoading(true)
       try {
-        const response = await api.get(`/funcionarios/${funcionarioId}`)
-        const funcionario = response.data
-        
-        // Formata a data de ISO para dd/mm/yyyy
-        let dataAdmissaoFormatada = ""
-        if (funcionario.dataAdmissao) {
-          const data = new Date(funcionario.dataAdmissao)
-          const dia = String(data.getDate()).padStart(2, '0')
-          const mes = String(data.getMonth() + 1).padStart(2, '0')
-          const ano = data.getFullYear()
-          dataAdmissaoFormatada = `${dia}/${mes}/${ano}`
-        }
+        const response = await api.get(`/clientes/${clienteId}`)
+        const cliente = response.data
         
         setFormData({
-          nome: funcionario.nome || "",
-          cpfcnpj: funcionario.cpfCnpj || "",
-          email: funcionario.email || "",
-          telefone: funcionario.telefone?.toString() || "",
-          endereco: funcionario.endereco || "",
-          bairro: funcionario.bairro || "",
-          cidade: funcionario.cidade || "",
-          uf: funcionario.uf || "",
-          cep: funcionario.cep?.toString() || "",
-          dataAdmissao: dataAdmissaoFormatada,
-          cargo: funcionario.cargo || "",
-          salario: funcionario.salario?.toString() || "",
+          nome: cliente.nome || "",
+          tipoPessoa: cliente.tipoPessoa || "FISICA",
+          cpfcnpj: cliente.cpfCnpj || "",
+          ie: cliente.ie || "",
+          email: cliente.email || "",
+          telefone: cliente.telefone?.toString() || "",
+          endereco: cliente.endereco || "",
+          bairro: cliente.bairro || "",
+          cidade: cliente.cidade || "",
+          uf: cliente.uf || "",
+          cep: cliente.cep?.toString() || "",
+          genero: cliente.genero || undefined,
         })
       } catch {
-        toast.error("Erro ao carregar dados do funcionário")
-        router.push("/funcionarios")
+        toast.error("Erro ao carregar dados do cliente")
+        router.push("/clientes")
       } finally {
         setIsLoading(false)
       }
     }
 
     if (isEditing && isAuthenticated) {
-      fetchFuncionario()
+      fetchCliente()
     }
-  }, [funcionarioId, isAuthenticated, isEditing, router])
+  }, [clienteId, isAuthenticated, isEditing, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrors({})
     
     // Validação com Zod
-    const result = funcionarioSchema.safeParse(formData)
+    const result = clienteSchema.safeParse(formData)
 
     if (!result.success) {
-      const fieldErrors: Partial<Record<keyof FuncionarioFormData, string>> = {}
+      const fieldErrors: Partial<Record<keyof ClienteFormData, string>> = {}
       result.error.issues.forEach((issue) => {
         if (issue.path[0]) {
-          fieldErrors[issue.path[0] as keyof FuncionarioFormData] = issue.message
+          fieldErrors[issue.path[0] as keyof ClienteFormData] = issue.message
         }
       })
       setErrors(fieldErrors)
@@ -132,23 +129,45 @@ function CadastrarFuncionarioContent() {
 
     setIsSaving(true)
     try {
-      // Converte a data de dd/mm/yyyy para ISO
-      let dataAdmissaoISO = new Date().toISOString()
-      if (formData.dataAdmissao && formData.dataAdmissao.length === 10) {
-        const [dia, mes, ano] = formData.dataAdmissao.split("/")
-        if (dia && mes && ano) {
-          const dataFormatada = `${ano}-${mes}-${dia}T00:00:00`
-          dataAdmissaoISO = new Date(dataFormatada).toISOString()
+      const cpfCnpjLimpo = formData.cpfcnpj.replace(/\D/g, "")
+      
+      // Verifica se o CPF/CNPJ já existe no banco
+      try {
+        // Busca todos os clientes (pode precisar ajustar o tamanho da página se houver muitos)
+        const checkResponse = await api.get(`/clientes?page=0&size=1000`)
+        const clientes = checkResponse.data.content || []
+        
+        // Verifica se existe outro cliente com o mesmo CPF/CNPJ
+        const cpfExistente = clientes.find((cliente: { cpfCnpj: string; id?: number }) => {
+          const cpfBanco = cliente.cpfCnpj?.replace(/\D/g, "")
+          // Se estiver editando, ignora o próprio cliente
+          if (isEditing && cliente.id?.toString() === clienteId) {
+            return false
+          }
+          return cpfBanco === cpfCnpjLimpo
+        })
+
+        if (cpfExistente) {
+          const tipoPessoaLabel = formData.tipoPessoa === "FISICA" ? "CPF" : "CNPJ"
+          toast.error(`Este ${tipoPessoaLabel} já está cadastrado no sistema`)
+          setErrors((prev) => ({
+            ...prev,
+            cpfcnpj: `Este ${tipoPessoaLabel} já está cadastrado`
+          }))
+          setIsSaving(false)
+          return
         }
+      } catch (checkError) {
+        console.error("Erro ao verificar CPF/CNPJ:", checkError)
+        // Continue mesmo se houver erro na verificação (pode ser problema de conectividade)
+        // O backend deve ter sua própria validação de unicidade
       }
-
-      const cpfLimpo = formData.cpfcnpj.replace(/\D/g, "")
-
+      
       const payload = {
         nome: formData.nome,
-        tipoPessoa: "FISICA" as const,
-        cpfcnpj: cpfLimpo,
-        ie: null,
+        tipoPessoa: formData.tipoPessoa,
+        cpfcnpj: cpfCnpjLimpo,
+        ie: formData.ie || null,
         email: formData.email,
         telefone: parseInt(formData.telefone?.replace(/\D/g, "") || "0") || 0,
         endereco: formData.endereco,
@@ -156,20 +175,18 @@ function CadastrarFuncionarioContent() {
         cidade: formData.cidade,
         uf: formData.uf,
         cep: parseInt(formData.cep?.replace(/\D/g, "") || "0") || 0,
-        dataAdmissao: dataAdmissaoISO,
-        cargo: formData.cargo,
-        salario: parseFloat(formData.salario) || 0,
+        genero: formData.genero || null,
       }
 
       if (isEditing) {
-        await api.put(`/funcionarios/${funcionarioId}`, payload)
-        toast.success("Funcionário atualizado com sucesso!")
+        await api.put(`/clientes/${clienteId}`, payload)
+        toast.success("Cliente atualizado com sucesso!")
       } else {
-        await api.post("/funcionarios", payload)
-        toast.success("Funcionário cadastrado com sucesso!")
+        await api.post("/clientes", payload)
+        toast.success("Cliente cadastrado com sucesso!")
       }
       
-      router.push("/funcionarios")
+      router.push("/clientes")
     } catch (err) {
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as {
@@ -177,17 +194,17 @@ function CadastrarFuncionarioContent() {
         }
         toast.error(
           axiosError.response?.data?.message || 
-          `Erro ao ${isEditing ? "atualizar" : "cadastrar"} funcionário`
+          `Erro ao ${isEditing ? "atualizar" : "cadastrar"} cliente`
         )
       } else {
-        toast.error(`Erro ao ${isEditing ? "atualizar" : "cadastrar"} funcionário`)
+        toast.error(`Erro ao ${isEditing ? "atualizar" : "cadastrar"} cliente`)
       }
     } finally {
       setIsSaving(false)
     }
   }
 
-  const handleInputChange = (field: keyof FuncionarioFormData, value: string | undefined) => {
+  const handleInputChange = (field: keyof ClienteFormData, value: string | undefined) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
     
     // Limpa erro do campo ao digitar
@@ -198,24 +215,6 @@ function CadastrarFuncionarioContent() {
         return newErrors
       })
     }
-  }
-
-  // Função para formatar data dd/mm/yyyy
-  const formatarDataParaInput = (value: string) => {
-    const apenasNumeros = value.replace(/\D/g, "")
-    
-    if (apenasNumeros.length <= 2) {
-      return apenasNumeros
-    } else if (apenasNumeros.length <= 4) {
-      return `${apenasNumeros.slice(0, 2)}/${apenasNumeros.slice(2)}`
-    } else {
-      return `${apenasNumeros.slice(0, 2)}/${apenasNumeros.slice(2, 4)}/${apenasNumeros.slice(4, 8)}`
-    }
-  }
-
-  const handleDataChange = (value: string) => {
-    const formatted = formatarDataParaInput(value)
-    handleInputChange("dataAdmissao", formatted)
   }
 
   if (loading || !isAuthenticated || isLoading) {
@@ -230,17 +229,6 @@ function CadastrarFuncionarioContent() {
   }
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
@@ -248,25 +236,25 @@ function CadastrarFuncionarioContent() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => router.push("/funcionarios")}
+                  onClick={() => router.push("/clientes")}
                   className="mb-4"
                 >
                   <IconArrowLeft className="mr-2 size-4" />
                   Voltar
                 </Button>
                 <h1 className="text-3xl font-bold tracking-tight">
-                  {isEditing ? "Editar Funcionário" : "Cadastrar Funcionário"}
+                  {isEditing ? "Editar Cliente" : "Cadastrar Cliente"}
                 </h1>
               </div>
 
               <div className="px-4 lg:px-6">
                 <Card className="max-w-3xl">
                   <CardHeader>
-                    <CardTitle>{isEditing ? "Editar Funcionário" : "Novo Funcionário"}</CardTitle>
+                    <CardTitle>{isEditing ? "Editar Cliente" : "Novo Cliente"}</CardTitle>
                     <CardDescription>
                       {isEditing
-                        ? "Atualize as informações do funcionário"
-                        : "Preencha os dados para cadastrar um novo funcionário"}
+                        ? "Atualize as informações do cliente"
+                        : "Preencha os dados para cadastrar um novo cliente"}
                     </CardDescription>
                   </CardHeader>
                   <form onSubmit={handleSubmit}>
@@ -287,63 +275,76 @@ function CadastrarFuncionarioContent() {
                         </Field>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <Field data-invalid={!!errors.tipoPessoa}>
+                            <FieldLabel htmlFor="tipoPessoa">Tipo de Pessoa *</FieldLabel>
+                            <FieldContent>
+                              <Select
+                                value={formData.tipoPessoa}
+                                onValueChange={(value) =>
+                                  handleInputChange("tipoPessoa", value)
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="FISICA">Física</SelectItem>
+                                  <SelectItem value="JURIDICA">Jurídica</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              {errors.tipoPessoa && <FieldError>{errors.tipoPessoa}</FieldError>}
+                            </FieldContent>
+                          </Field>
+
                           <Field data-invalid={!!errors.cpfcnpj}>
-                            <FieldLabel htmlFor="cpfcnpj">CPF *</FieldLabel>
+                            <FieldLabel htmlFor="cpfcnpj">
+                              {formData.tipoPessoa === "FISICA" ? "CPF" : "CNPJ"} *
+                            </FieldLabel>
                             <FieldContent>
                               <Input
                                 id="cpfcnpj"
                                 value={formData.cpfcnpj}
                                 onChange={(e) => handleInputChange("cpfcnpj", e.target.value)}
-                                placeholder="000.000.000-00"
+                                placeholder={
+                                  formData.tipoPessoa === "FISICA"
+                                    ? "000.000.000-00"
+                                    : "00.000.000/0000-00"
+                                }
                                 required
                               />
                               {errors.cpfcnpj && <FieldError>{errors.cpfcnpj}</FieldError>}
                             </FieldContent>
                           </Field>
 
-                          <Field data-invalid={!!errors.cargo}>
-                            <FieldLabel htmlFor="cargo">Cargo *</FieldLabel>
+                          <Field>
+                            <FieldLabel htmlFor="ie">Inscrição Estadual</FieldLabel>
                             <FieldContent>
                               <Input
-                                id="cargo"
-                                value={formData.cargo}
-                                onChange={(e) => handleInputChange("cargo", e.target.value)}
-                                placeholder="Ex: Caixa, Gerente"
-                                required
+                                id="ie"
+                                value={formData.ie}
+                                onChange={(e) => handleInputChange("ie", e.target.value)}
+                                placeholder="Inscrição Estadual"
                               />
-                              {errors.cargo && <FieldError>{errors.cargo}</FieldError>}
                             </FieldContent>
                           </Field>
 
-                          <Field data-invalid={!!errors.salario}>
-                            <FieldLabel htmlFor="salario">Salário (R$) *</FieldLabel>
+                          <Field>
+                            <FieldLabel htmlFor="genero">Gênero *</FieldLabel>
                             <FieldContent>
-                              <Input
-                                id="salario"
-                                type="number"
-                                step="0.01"
-                                value={formData.salario}
-                                onChange={(e) => handleInputChange("salario", e.target.value)}
-                                placeholder="0.00"
+                              <Select
+                                value={formData.genero || ""}
+                                onValueChange={(value) => handleInputChange("genero", value || undefined)}
                                 required
-                              />
-                              {errors.salario && <FieldError>{errors.salario}</FieldError>}
-                            </FieldContent>
-                          </Field>
-
-                          <Field data-invalid={!!errors.dataAdmissao}>
-                            <FieldLabel htmlFor="dataAdmissao">Data de Admissão *</FieldLabel>
-                            <FieldContent>
-                              <Input
-                                id="dataAdmissao"
-                                type="text"
-                                placeholder="dd/mm/yyyy"
-                                value={formData.dataAdmissao}
-                                onChange={(e) => handleDataChange(e.target.value)}
-                                maxLength={10}
-                                required
-                              />
-                              {errors.dataAdmissao && <FieldError>{errors.dataAdmissao}</FieldError>}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="MASCULINO">Masculino</SelectItem>
+                                  <SelectItem value="FEMININO">Feminino</SelectItem>
+                                  <SelectItem value="NAO_INFORMAR">Não informar</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </FieldContent>
                           </Field>
 
@@ -411,7 +412,7 @@ function CadastrarFuncionarioContent() {
                             </FieldContent>
                           </Field>
 
-                          <Field>
+                          <Field data-invalid={!!errors.uf}>
                             <FieldLabel htmlFor="uf">UF</FieldLabel>
                             <FieldContent>
                               <Input
@@ -421,6 +422,7 @@ function CadastrarFuncionarioContent() {
                                 placeholder="PR"
                                 maxLength={2}
                               />
+                              {errors.uf && <FieldError>{errors.uf}</FieldError>}
                             </FieldContent>
                           </Field>
 
@@ -442,7 +444,7 @@ function CadastrarFuncionarioContent() {
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => router.push("/funcionarios")}
+                        onClick={() => router.push("/clientes")}
                         disabled={isSaving}
                       >
                         Cancelar
@@ -460,12 +462,10 @@ function CadastrarFuncionarioContent() {
             </div>
           </div>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
   )
 }
 
-export default function CadastrarFuncionarioPage() {
+export default function CadastrarClientePage() {
   return (
     <Suspense
       fallback={
@@ -477,7 +477,7 @@ export default function CadastrarFuncionarioPage() {
         </div>
       }
     >
-      <CadastrarFuncionarioContent />
+      <CadastrarClienteContent />
     </Suspense>
   )
 }

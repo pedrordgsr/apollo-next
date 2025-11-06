@@ -37,7 +37,7 @@ export function LoginForm({
       localStorage.setItem("funcionarioId", data.funcionarioId.toString())
 
       // Redirecionar para dashboard
-      router.push("/dashboard")
+      router.push("/home")
     } catch (err) {
       const errorMessage = err instanceof Error && 'response' in err 
         ? (err as { response?: { data?: { message?: string } } }).response?.data?.message 

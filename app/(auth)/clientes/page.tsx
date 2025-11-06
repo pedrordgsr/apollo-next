@@ -9,10 +9,10 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import { useAuth } from "@/lib/useAuth"
-import { FornecedoresDataTable } from "./fornecedores-data-table"
+import { ClientesDataTable } from "./clientes-data-table"
 import { api } from "@/lib/api"
 
-interface Fornecedor {
+interface Cliente {
   id: number
   status: string
   nome: string
@@ -28,11 +28,11 @@ interface Fornecedor {
   uf: string
   cep: number
   dataCadastro: string
-  tipoFornecedor: string
+  genero: string
 }
 
 interface PaginatedResponse {
-  content: Fornecedor[]
+  content: Cliente[]
   pageable: {
     pageNumber: number
     pageSize: number
@@ -48,10 +48,10 @@ interface PaginatedResponse {
   empty: boolean
 }
 
-export default function FornecedoresPage() {
+export default function ClientesPage() {
   const { isAuthenticated, loading } = useAuth()
   const router = useRouter()
-  const [fornecedores, setFornecedores] = useState<Fornecedor[]>([])
+  const [clientes, setClientes] = useState<Cliente[]>([])
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
@@ -66,19 +66,19 @@ export default function FornecedoresPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchFornecedores(page)
+      fetchClientes(page)
     }
   }, [page, isAuthenticated])
 
-  const fetchFornecedores = async (pageNumber: number) => {
+  const fetchClientes = async (pageNumber: number) => {
     setIsLoading(true)
     setError(null)
     try {
       const response = await api.get<PaginatedResponse>(
-        `/fornecedores?page=${pageNumber}&size=10`
+        `/clientes?page=${pageNumber}&size=10`
       )
 
-      setFornecedores(response.data.content)
+      setClientes(response.data.content)
       setTotalPages(response.data.totalPages)
       setTotalElements(response.data.totalElements)
     } catch (err) {
@@ -87,10 +87,10 @@ export default function FornecedoresPage() {
         if (axiosError.response?.status === 401) {
           setError("Sessão expirada. Faça login novamente.")
         } else {
-          setError(axiosError.response?.data?.message || "Erro ao carregar fornecedores")
+          setError(axiosError.response?.data?.message || "Erro ao carregar clientes")
         }
       } else {
-        setError("Erro ao carregar fornecedores")
+        setError("Erro ao carregar clientes")
       }
     } finally {
       setIsLoading(false)
@@ -98,7 +98,7 @@ export default function FornecedoresPage() {
   }
 
   const handleRefresh = () => {
-    fetchFornecedores(page)
+    fetchClientes(page)
   }
 
   if (loading || !isAuthenticated) {
@@ -110,24 +110,13 @@ export default function FornecedoresPage() {
   }
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <div className="px-4 lg:px-6">
-                <h1 className="text-3xl font-bold tracking-tight">Fornecedores</h1>
+                <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
                 <p className="text-muted-foreground mt-2">
-                  Gerencie o cadastro de fornecedores
+                  Gerencie o cadastro de clientes
                 </p>
               </div>
               
@@ -137,8 +126,8 @@ export default function FornecedoresPage() {
                 </div>
               )}
 
-              <FornecedoresDataTable
-                data={fornecedores}
+              <ClientesDataTable
+                data={clientes}
                 currentPage={page}
                 totalPages={totalPages}
                 totalElements={totalElements}
@@ -149,7 +138,5 @@ export default function FornecedoresPage() {
             </div>
           </div>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
   )
 }

@@ -9,10 +9,10 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import { useAuth } from "@/lib/useAuth"
-import { FuncionariosDataTable } from "./funcionarios-data-table"
+import { PessoasDataTable } from "./pessoas-data-table"
 import { api } from "@/lib/api"
 
-interface Funcionario {
+interface Pessoa {
   id: number
   status: string
   nome: string
@@ -28,14 +28,10 @@ interface Funcionario {
   uf: string
   cep: number
   dataCadastro: string
-  dataAdmissao: string
-  cargo: string
-  salario: number
-  dataDemissao: string | null
 }
 
 interface PaginatedResponse {
-  content: Funcionario[]
+  content: Pessoa[]
   pageable: {
     pageNumber: number
     pageSize: number
@@ -51,10 +47,10 @@ interface PaginatedResponse {
   empty: boolean
 }
 
-export default function FuncionariosPage() {
+export default function PessoasPage() {
   const { isAuthenticated, loading } = useAuth()
   const router = useRouter()
-  const [funcionarios, setFuncionarios] = useState<Funcionario[]>([])
+  const [pessoas, setPessoas] = useState<Pessoa[]>([])
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
@@ -69,19 +65,19 @@ export default function FuncionariosPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchFuncionarios(page)
+      fetchPessoas(page)
     }
   }, [page, isAuthenticated])
 
-  const fetchFuncionarios = async (pageNumber: number) => {
+  const fetchPessoas = async (pageNumber: number) => {
     setIsLoading(true)
     setError(null)
     try {
       const response = await api.get<PaginatedResponse>(
-        `/funcionarios?page=${pageNumber}&size=10`
+        `/pessoas?page=${pageNumber}&size=10`
       )
 
-      setFuncionarios(response.data.content)
+      setPessoas(response.data.content)
       setTotalPages(response.data.totalPages)
       setTotalElements(response.data.totalElements)
     } catch (err) {
@@ -90,10 +86,10 @@ export default function FuncionariosPage() {
         if (axiosError.response?.status === 401) {
           setError("Sessão expirada. Faça login novamente.")
         } else {
-          setError(axiosError.response?.data?.message || "Erro ao carregar funcionários")
+          setError(axiosError.response?.data?.message || "Erro ao carregar pessoas")
         }
       } else {
-        setError("Erro ao carregar funcionários")
+        setError("Erro ao carregar pessoas")
       }
     } finally {
       setIsLoading(false)
@@ -101,7 +97,7 @@ export default function FuncionariosPage() {
   }
 
   const handleRefresh = () => {
-    fetchFuncionarios(page)
+    fetchPessoas(page)
   }
 
   if (loading || !isAuthenticated) {
@@ -113,24 +109,13 @@ export default function FuncionariosPage() {
   }
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <div className="px-4 lg:px-6">
-                <h1 className="text-3xl font-bold tracking-tight">Funcionários</h1>
+                <h1 className="text-3xl font-bold tracking-tight">Pessoas</h1>
                 <p className="text-muted-foreground mt-2">
-                  Gerencie o cadastro de funcionários
+                  Visualize o cadastro de pessoas
                 </p>
               </div>
               
@@ -140,8 +125,8 @@ export default function FuncionariosPage() {
                 </div>
               )}
 
-              <FuncionariosDataTable
-                data={funcionarios}
+              <PessoasDataTable
+                data={pessoas}
                 currentPage={page}
                 totalPages={totalPages}
                 totalElements={totalElements}
@@ -152,7 +137,5 @@ export default function FuncionariosPage() {
             </div>
           </div>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
   )
 }

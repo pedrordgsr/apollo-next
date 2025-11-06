@@ -9,10 +9,10 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import { useAuth } from "@/lib/useAuth"
-import { ClientesDataTable } from "./clientes-data-table"
+import { FuncionariosDataTable } from "./funcionarios-data-table"
 import { api } from "@/lib/api"
 
-interface Cliente {
+interface Funcionario {
   id: number
   status: string
   nome: string
@@ -28,11 +28,14 @@ interface Cliente {
   uf: string
   cep: number
   dataCadastro: string
-  genero: string
+  dataAdmissao: string
+  cargo: string
+  salario: number
+  dataDemissao: string | null
 }
 
 interface PaginatedResponse {
-  content: Cliente[]
+  content: Funcionario[]
   pageable: {
     pageNumber: number
     pageSize: number
@@ -48,10 +51,10 @@ interface PaginatedResponse {
   empty: boolean
 }
 
-export default function ClientesPage() {
+export default function FuncionariosPage() {
   const { isAuthenticated, loading } = useAuth()
   const router = useRouter()
-  const [clientes, setClientes] = useState<Cliente[]>([])
+  const [funcionarios, setFuncionarios] = useState<Funcionario[]>([])
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
@@ -66,19 +69,19 @@ export default function ClientesPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchClientes(page)
+      fetchFuncionarios(page)
     }
   }, [page, isAuthenticated])
 
-  const fetchClientes = async (pageNumber: number) => {
+  const fetchFuncionarios = async (pageNumber: number) => {
     setIsLoading(true)
     setError(null)
     try {
       const response = await api.get<PaginatedResponse>(
-        `/clientes?page=${pageNumber}&size=10`
+        `/funcionarios?page=${pageNumber}&size=10`
       )
 
-      setClientes(response.data.content)
+      setFuncionarios(response.data.content)
       setTotalPages(response.data.totalPages)
       setTotalElements(response.data.totalElements)
     } catch (err) {
@@ -87,10 +90,10 @@ export default function ClientesPage() {
         if (axiosError.response?.status === 401) {
           setError("Sessão expirada. Faça login novamente.")
         } else {
-          setError(axiosError.response?.data?.message || "Erro ao carregar clientes")
+          setError(axiosError.response?.data?.message || "Erro ao carregar funcionários")
         }
       } else {
-        setError("Erro ao carregar clientes")
+        setError("Erro ao carregar funcionários")
       }
     } finally {
       setIsLoading(false)
@@ -98,7 +101,7 @@ export default function ClientesPage() {
   }
 
   const handleRefresh = () => {
-    fetchClientes(page)
+    fetchFuncionarios(page)
   }
 
   if (loading || !isAuthenticated) {
@@ -110,24 +113,13 @@ export default function ClientesPage() {
   }
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <div className="px-4 lg:px-6">
-                <h1 className="text-3xl font-bold tracking-tight">Usuários</h1>
+                <h1 className="text-3xl font-bold tracking-tight">Funcionários</h1>
                 <p className="text-muted-foreground mt-2">
-                  Gerencie o cadastro de usuários
+                  Gerencie o cadastro de funcionários
                 </p>
               </div>
               
@@ -137,8 +129,8 @@ export default function ClientesPage() {
                 </div>
               )}
 
-              <ClientesDataTable
-                data={clientes}
+              <FuncionariosDataTable
+                data={funcionarios}
                 currentPage={page}
                 totalPages={totalPages}
                 totalElements={totalElements}
@@ -149,7 +141,5 @@ export default function ClientesPage() {
             </div>
           </div>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
   )
 }

@@ -1,9 +1,21 @@
+"use client"
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/lib/useAuth"
 import { GalleryVerticalEnd } from "lucide-react"
-
 import { LoginForm } from "@/components/login-form"
 import { ModeToggle } from "@/components/theme-toggle"
 
 export default function LoginPage() {
+  const { user } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (user) {
+      router.replace("/home")
+    }
+  }, [user, router])
+
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
       <div className="flex flex-col gap-4 p-6 md:p-10">

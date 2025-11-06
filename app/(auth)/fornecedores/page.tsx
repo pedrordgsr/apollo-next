@@ -9,10 +9,10 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import { useAuth } from "@/lib/useAuth"
-import { PessoasDataTable } from "./pessoas-data-table"
+import { FornecedoresDataTable } from "./fornecedores-data-table"
 import { api } from "@/lib/api"
 
-interface Pessoa {
+interface Fornecedor {
   id: number
   status: string
   nome: string
@@ -28,10 +28,11 @@ interface Pessoa {
   uf: string
   cep: number
   dataCadastro: string
+  tipoFornecedor: string
 }
 
 interface PaginatedResponse {
-  content: Pessoa[]
+  content: Fornecedor[]
   pageable: {
     pageNumber: number
     pageSize: number
@@ -47,10 +48,10 @@ interface PaginatedResponse {
   empty: boolean
 }
 
-export default function PessoasPage() {
+export default function FornecedoresPage() {
   const { isAuthenticated, loading } = useAuth()
   const router = useRouter()
-  const [pessoas, setPessoas] = useState<Pessoa[]>([])
+  const [fornecedores, setFornecedores] = useState<Fornecedor[]>([])
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
@@ -65,19 +66,19 @@ export default function PessoasPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchPessoas(page)
+      fetchFornecedores(page)
     }
   }, [page, isAuthenticated])
 
-  const fetchPessoas = async (pageNumber: number) => {
+  const fetchFornecedores = async (pageNumber: number) => {
     setIsLoading(true)
     setError(null)
     try {
       const response = await api.get<PaginatedResponse>(
-        `/pessoas?page=${pageNumber}&size=10`
+        `/fornecedores?page=${pageNumber}&size=10`
       )
 
-      setPessoas(response.data.content)
+      setFornecedores(response.data.content)
       setTotalPages(response.data.totalPages)
       setTotalElements(response.data.totalElements)
     } catch (err) {
@@ -86,10 +87,10 @@ export default function PessoasPage() {
         if (axiosError.response?.status === 401) {
           setError("Sessão expirada. Faça login novamente.")
         } else {
-          setError(axiosError.response?.data?.message || "Erro ao carregar pessoas")
+          setError(axiosError.response?.data?.message || "Erro ao carregar fornecedores")
         }
       } else {
-        setError("Erro ao carregar pessoas")
+        setError("Erro ao carregar fornecedores")
       }
     } finally {
       setIsLoading(false)
@@ -97,7 +98,7 @@ export default function PessoasPage() {
   }
 
   const handleRefresh = () => {
-    fetchPessoas(page)
+    fetchFornecedores(page)
   }
 
   if (loading || !isAuthenticated) {
@@ -109,24 +110,13 @@ export default function PessoasPage() {
   }
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <div className="px-4 lg:px-6">
-                <h1 className="text-3xl font-bold tracking-tight">Pessoas</h1>
+                <h1 className="text-3xl font-bold tracking-tight">Fornecedores</h1>
                 <p className="text-muted-foreground mt-2">
-                  Visualize o cadastro de pessoas
+                  Gerencie o cadastro de fornecedores
                 </p>
               </div>
               
@@ -136,8 +126,8 @@ export default function PessoasPage() {
                 </div>
               )}
 
-              <PessoasDataTable
-                data={pessoas}
+              <FornecedoresDataTable
+                data={fornecedores}
                 currentPage={page}
                 totalPages={totalPages}
                 totalElements={totalElements}
@@ -148,7 +138,5 @@ export default function PessoasPage() {
             </div>
           </div>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
   )
 }
