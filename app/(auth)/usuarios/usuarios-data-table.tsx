@@ -55,6 +55,17 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 interface Usuario {
   username: string
@@ -73,6 +84,7 @@ interface UsuarioActionsProps {
 
 function UsuarioActions({ usuario, onRefresh }: UsuarioActionsProps) {
   const [isToggling, setIsToggling] = React.useState(false)
+  const [isAlertOpen, setIsAlertOpen] = React.useState(false)
   const { user } = useAuth()
 
   const isCurrentUser = user?.usuarioId === parseInt(usuario.idUsuario)
@@ -89,6 +101,21 @@ function UsuarioActions({ usuario, onRefresh }: UsuarioActionsProps) {
       // Determina o novo status baseado no status atual
       const novoStatus = usuario.status === "ATIVO" ? "INATIVO" : "ATIVO"
       
+      // Se estiver tentando ativar o usuário, verifica o status do funcionário
+      if (novoStatus === "ATIVO") {
+        // Busca os dados do funcionário pela API
+        const funcionarioResponse = await api.get(`/funcionarios/${usuario.idPessoa}`)
+        const funcionario = funcionarioResponse.data
+        
+        // Verifica se o funcionário está demitido (dataDemissao não é null)
+        if (funcionario.dataDemissao) {
+          toast.error("Não é possível ativar o usuário de um funcionário demitido!")
+          setIsToggling(false)
+          setIsAlertOpen(false)
+          return
+        }
+      }
+      
       // Chama a API com o método PUT e o parâmetro status na query string
       await api.put(`/usuarios/${usuario.idUsuario}/status?status=${novoStatus}`)
       
@@ -103,41 +130,77 @@ function UsuarioActions({ usuario, onRefresh }: UsuarioActionsProps) {
         }
         if (axiosError.response?.status === 401) {
           toast.error("Sessão expirada. Faça login novamente.")
+        } else if (axiosError.response?.status === 404) {
+          toast.error("Funcionário não encontrado!")
         } else {
-          toast.error("Erro ao alterar status do usuário")
+          toast.error(axiosError.response?.data?.message || "Erro ao alterar status do usuário")
         }
       } else {
         toast.error("Erro ao alterar status do usuário")
       }
     } finally {
       setIsToggling(false)
+      setIsAlertOpen(false)
     }
   }
 
   return (
     <div className="flex items-center justify-end gap-1">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={handleToggleStatus}
-        disabled={isToggling || (isCurrentUser && usuario.status === "ATIVO")}
-        title={
-          isCurrentUser && usuario.status === "ATIVO"
-            ? "Você não pode desativar seu próprio usuário"
-            : usuario.status === "ATIVO" 
-            ? "Inativar usuário" 
-            : "Ativar usuário"
-        }
-      >
-        {usuario.status === "ATIVO" ? (
-          <IconToggleRight className={`size-4 ${isCurrentUser ? "text-gray-400" : "text-green-600"}`} />
-        ) : (
-          <IconToggleLeft className="size-4 text-gray-400" />
-        )}
-        <span className="sr-only">
-          {usuario.status === "ATIVO" ? "Inativar" : "Ativar"} usuário
-        </span>
-      </Button>
+      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+        <AlertDialogTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsAlertOpen(true)}
+            disabled={isToggling || (isCurrentUser && usuario.status === "ATIVO")}
+            title={
+              isCurrentUser && usuario.status === "ATIVO"
+                ? "Você não pode desativar seu próprio usuário"
+                : usuario.status === "ATIVO" 
+                ? "Inativar usuário" 
+                : "Ativar usuário"
+            }
+          >
+            {usuario.status === "ATIVO" ? (
+              <IconToggleRight className={`size-4 ${isCurrentUser ? "text-gray-400" : "text-green-600"}`} />
+            ) : (
+              <IconToggleLeft className="size-4 text-gray-400" />
+            )}
+            <span className="sr-only">
+              {usuario.status === "ATIVO" ? "Inativar" : "Ativar"} usuário
+            </span>
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {usuario.status === "ATIVO" ? "Confirmar Inativação" : "Confirmar Ativação"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {usuario.status === "ATIVO" ? (
+                <>
+                  Você tem certeza que deseja inativar o usuário <strong>{usuario.username}</strong>?
+                  O usuário não poderá mais acessar o sistema.
+                </>
+              ) : (
+                <>
+                  Você tem certeza que deseja ativar o usuário <strong>{usuario.username}</strong>?
+                  {" "}O sistema verificará se o funcionário <strong>{usuario.nome}</strong> está ativo antes de prosseguir.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleToggleStatus} disabled={isToggling}>
+              {isToggling 
+                ? (usuario.status === "ATIVO" ? "Inativando..." : "Ativando...") 
+                : (usuario.status === "ATIVO" ? "Confirmar Inativação" : "Confirmar Ativação")
+              }
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <Button asChild variant="ghost" size="sm">
         <Link href={`/usuarios/cadastrar?id=${usuario.idUsuario}`}>
           <IconPencil className="size-4" />
