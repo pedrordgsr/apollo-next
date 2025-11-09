@@ -41,12 +41,10 @@ import {
   IconFileDescription,
   IconFileWord,
   IconFolder,
-  IconHelp,
   IconInnerShadowTop,
   IconListDetails,
   IconReport,
   IconSearch,
-  IconSettings,
   IconUsers,
 } from "@tabler/icons-react"
 
@@ -130,18 +128,7 @@ const data = {
       ],
     },
   ],
-  navSecondary: [
-    {
-      title: "Configurações",
-      url: "#",
-      icon: IconSettings,
-    },
-    {
-      title: "Sobre",
-      url: "#",
-      icon: IconHelp,
-    }
-  ],
+  navSecondary: [],
   pessoas: [
     {
       name: "Todas as pessoas",
