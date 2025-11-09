@@ -55,39 +55,35 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 
-interface Cliente {
-  id: number
+interface Usuario {
+  username: string
+  email: string
+  idUsuario: string
+  idPessoa: string
   status: string
   nome: string
-  categoria: string
-  tipoPessoa: string
-  cpfCnpj: string
-  ie: string | null
-  email: string
-  telefone: number
-  endereco: string
-  bairro: string
-  cidade: string
-  uf: string
-  cep: number
-  dataCadastro: string
-  genero: string
+  cargo: string
 }
 
-interface ClienteActionsProps {
-  cliente: Cliente
+interface UsuarioActionsProps {
+  usuario: Usuario
   onRefresh: () => void
 }
 
-function ClienteActions({ cliente, onRefresh }: ClienteActionsProps) {
+function UsuarioActions({ usuario, onRefresh }: UsuarioActionsProps) {
   const [isToggling, setIsToggling] = React.useState(false)
 
   const handleToggleStatus = async () => {
     setIsToggling(true)
     try {
-      await api.put(`/clientes/status/${cliente.id}`)
+      // Determina o novo status baseado no status atual
+      const novoStatus = usuario.status === "ATIVO" ? "INATIVO" : "ATIVO"
+      
+      // Chama a API com o método PUT e o parâmetro status na query string
+      await api.put(`/usuarios/${usuario.idUsuario}/status?status=${novoStatus}`)
+      
       toast.success(
-        `Cliente ${cliente.status === "ATIVO" ? "inativado" : "ativado"} com sucesso!`
+        `Usuário ${usuario.status === "ATIVO" ? "inativado" : "ativado"} com sucesso!`
       )
       onRefresh()
     } catch (err) {
@@ -98,10 +94,10 @@ function ClienteActions({ cliente, onRefresh }: ClienteActionsProps) {
         if (axiosError.response?.status === 401) {
           toast.error("Sessão expirada. Faça login novamente.")
         } else {
-          toast.error("Erro ao alterar status do cliente")
+          toast.error("Erro ao alterar status do usuário")
         }
       } else {
-        toast.error("Erro ao alterar status do cliente")
+        toast.error("Erro ao alterar status do usuário")
       }
     } finally {
       setIsToggling(false)
@@ -115,38 +111,45 @@ function ClienteActions({ cliente, onRefresh }: ClienteActionsProps) {
         size="sm"
         onClick={handleToggleStatus}
         disabled={isToggling}
-        title={cliente.status === "ATIVO" ? "Inativar cliente" : "Ativar cliente"}
+        title={usuario.status === "ATIVO" ? "Inativar usuário" : "Ativar usuário"}
       >
-        {cliente.status === "ATIVO" ? (
+        {usuario.status === "ATIVO" ? (
           <IconToggleRight className="size-4 text-green-600" />
         ) : (
           <IconToggleLeft className="size-4 text-gray-400" />
         )}
         <span className="sr-only">
-          {cliente.status === "ATIVO" ? "Inativar" : "Ativar"} cliente
+          {usuario.status === "ATIVO" ? "Inativar" : "Ativar"} usuário
         </span>
       </Button>
       <Button asChild variant="ghost" size="sm">
-        <Link href={`/clientes/cadastrar?id=${cliente.id}`}>
+        <Link href={`/usuarios/cadastrar?id=${usuario.idUsuario}`}>
           <IconPencil className="size-4" />
-          <span className="sr-only">Editar cliente</span>
+          <span className="sr-only">Editar usuário</span>
         </Link>
       </Button>
     </div>
   )
 }
 
-const createColumns = (onRefresh: () => void): ColumnDef<Cliente>[] => [
+const createColumns = (onRefresh: () => void): ColumnDef<Usuario>[] => [
   {
-    accessorKey: "id",
+    accessorKey: "idUsuario",
     header: "ID",
     cell: ({ row }) => (
-      <div className="w-16 font-medium">{row.getValue("id")}</div>
+      <div className="w-16 font-medium">{row.getValue("idUsuario")}</div>
     ),
     filterFn: (row, id, value) => {
-      const clienteId = row.getValue(id)?.toString() || ""
-      return clienteId.startsWith(value)
+      const usuarioId = row.getValue(id)?.toString() || ""
+      return usuarioId.startsWith(value)
     },
+  },
+  {
+    accessorKey: "username",
+    header: "Nome de Usuário",
+    cell: ({ row }) => (
+      <div className="font-medium">{row.getValue("username")}</div>
+    ),
   },
   {
     accessorKey: "nome",
@@ -156,51 +159,6 @@ const createColumns = (onRefresh: () => void): ColumnDef<Cliente>[] => [
     ),
   },
   {
-    accessorKey: "tipoPessoa",
-    header: "Tipo",
-    cell: ({ row }) => {
-      const tipo = row.getValue("tipoPessoa") as string
-      return (
-        <Badge variant="secondary" className="px-2">
-          {tipo === "FISICA" ? "Física" : tipo === "JURIDICA" ? "Jurídica" : tipo}
-        </Badge>
-      )
-    },
-  },
-  {
-    accessorKey: "cpfCnpj",
-    header: "CPF/CNPJ",
-    cell: ({ row }) => {
-      const cpfCnpj = row.getValue("cpfCnpj") as string
-      const tipoPessoa = row.original.tipoPessoa
-      
-      if (cpfCnpj && typeof cpfCnpj === "string") {
-        const cleaned = cpfCnpj.replace(/\D/g, "")
-        
-        // Se for pessoa física (CPF - 11 dígitos)
-        if (tipoPessoa === "FISICA" && cleaned.length === 11) {
-          const formatted = cleaned.replace(
-            /(\d{3})(\d{3})(\d{3})(\d{2})/,
-            "$1.$2.$3-$4"
-          )
-          return <div className="font-medium">{formatted}</div>
-        }
-        
-        // Se for pessoa jurídica (CNPJ - 14 dígitos)
-        if (tipoPessoa === "JURIDICA" && cleaned.length === 14) {
-          const formatted = cleaned.replace(
-            /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
-            "$1.$2.$3/$4-$5"
-          )
-          return <div className="font-medium">{formatted}</div>
-        }
-        
-        return <div className="font-medium">{cleaned || cpfCnpj}</div>
-      }
-      return <div className="font-medium">{cpfCnpj || "-"}</div>
-    },
-  },
-  {
     accessorKey: "email",
     header: "E-mail",
     cell: ({ row }) => (
@@ -208,56 +166,18 @@ const createColumns = (onRefresh: () => void): ColumnDef<Cliente>[] => [
     ),
   },
   {
-    accessorKey: "telefone",
-    header: "Telefone",
-    cell: ({ row }) => {
-      const telefone = row.getValue("telefone")
-      
-      if (telefone) {
-        const telefoneStr = telefone.toString()
-        const cleaned = telefoneStr.replace(/\D/g, "")
-        
-        if (cleaned.length === 11) {
-          const formatted = cleaned.replace(
-            /(\d{2})(\d{5})(\d{4})/,
-            "($1) $2-$3"
-          )
-          return <div className="font-medium">{formatted}</div>
-        } else if (cleaned.length === 10) {
-          const formatted = cleaned.replace(
-            /(\d{2})(\d{4})(\d{4})/,
-            "($1) $2-$3"
-          )
-          return <div className="font-medium">{formatted}</div>
-        }
-        return <div className="font-medium">{telefoneStr}</div>
-      }
-      return <div className="font-medium">-</div>
-    },
+    accessorKey: "cargo",
+    header: "Cargo",
+    cell: ({ row }) => (
+      <div className="font-medium">{row.getValue("cargo") || "-"}</div>
+    ),
   },
   {
-    accessorKey: "genero",
-    header: "Gênero",
-    cell: ({ row }) => {
-      const genero = row.getValue("genero") as string
-      const generoFormatado = genero === "MASCULINO" ? "Masculino" : 
-                             genero === "FEMININO" ? "Feminino" : 
-                             genero || "-"
-      return <div className="font-medium">{generoFormatado}</div>
-    },
-  },
-  {
-    accessorKey: "cidade",
-    header: "Cidade/UF",
-    cell: ({ row }) => {
-      const cidade = row.getValue("cidade") as string
-      const uf = row.original.uf
-      return (
-        <div className="font-medium">
-          {cidade && uf ? `${cidade}/${uf}` : cidade || uf || "-"}
-        </div>
-      )
-    },
+    accessorKey: "idPessoa",
+    header: "ID Funcionário",
+    cell: ({ row }) => (
+      <div className="font-medium">{row.getValue("idPessoa")}</div>
+    ),
   },
   {
     accessorKey: "status",
@@ -278,14 +198,14 @@ const createColumns = (onRefresh: () => void): ColumnDef<Cliente>[] => [
     id: "acoes",
     header: () => <div className="text-center">Ações</div>,
     cell: ({ row }) => {
-      const cliente = row.original
-      return <ClienteActions cliente={cliente} onRefresh={onRefresh} />
+      const usuario = row.original
+      return <UsuarioActions usuario={usuario} onRefresh={onRefresh} />
     },
   },
 ]
 
-interface ClientesDataTableProps {
-  data: Cliente[]
+interface UsuariosDataTableProps {
+  data: Usuario[]
   currentPage: number
   totalPages: number
   totalElements: number
@@ -294,7 +214,7 @@ interface ClientesDataTableProps {
   onRefresh: () => void
 }
 
-export function ClientesDataTable({
+export function UsuariosDataTable({
   data,
   currentPage,
   totalPages,
@@ -302,9 +222,9 @@ export function ClientesDataTable({
   isLoading,
   onPageChange,
   onRefresh,
-}: ClientesDataTableProps) {
+}: UsuariosDataTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([
-    { id: "id", desc: false }
+    { id: "idUsuario", desc: false }
   ])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -315,27 +235,17 @@ export function ClientesDataTable({
   const columns = React.useMemo(() => createColumns(onRefresh), [onRefresh])
 
   const handleExportToExcel = () => {
-    // Prepara os dados para exportação, removendo campos desnecessários
-    const dataToExport = data.map(cliente => ({
-      ID: cliente.id,
-      Nome: cliente.nome,
-      "Tipo Pessoa": cliente.tipoPessoa,
-      "CPF/CNPJ": cliente.cpfCnpj,
-      IE: cliente.ie || "-",
-      Email: cliente.email,
-      Telefone: cliente.telefone,
-      Endereço: cliente.endereco,
-      Bairro: cliente.bairro,
-      Cidade: cliente.cidade,
-      UF: cliente.uf,
-      CEP: cliente.cep,
-      Categoria: cliente.categoria,
-      Gênero: cliente.genero,
-      Status: cliente.status,
-      "Data de Cadastro": cliente.dataCadastro,
+    const dataToExport = data.map(usuario => ({
+      "ID Usuário": usuario.idUsuario,
+      "Nome de Usuário": usuario.username,
+      Nome: usuario.nome,
+      Email: usuario.email,
+      Cargo: usuario.cargo,
+      "ID Funcionário": usuario.idPessoa,
+      Status: usuario.status,
     }))
 
-    const success = exportToExcel(dataToExport, "clientes", "Clientes")
+    const success = exportToExcel(dataToExport, "usuarios", "Usuários")
     if (success) {
       toast.success("Dados exportados com sucesso!")
     } else {
@@ -372,10 +282,10 @@ export function ClientesDataTable({
           <div className="relative flex-1 max-w-sm">
             <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Filtrar por nome..."
-              value={(table.getColumn("nome")?.getFilterValue() as string) ?? ""}
+              placeholder="Filtrar por nome de usuário..."
+              value={(table.getColumn("username")?.getFilterValue() as string) ?? ""}
               onChange={(event) =>
-                table.getColumn("nome")?.setFilterValue(event.target.value)
+                table.getColumn("username")?.setFilterValue(event.target.value)
               }
               className="pl-9"
             />
@@ -383,10 +293,10 @@ export function ClientesDataTable({
           <div className="relative flex-1 max-w-[200px]">
             <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Filtrar por CPF/CNPJ..."
-              value={(table.getColumn("cpfCnpj")?.getFilterValue() as string) ?? ""}
+              placeholder="Filtrar por nome..."
+              value={(table.getColumn("nome")?.getFilterValue() as string) ?? ""}
               onChange={(event) =>
-                table.getColumn("cpfCnpj")?.setFilterValue(event.target.value)
+                table.getColumn("nome")?.setFilterValue(event.target.value)
               }
               className="pl-9"
             />
@@ -403,9 +313,9 @@ export function ClientesDataTable({
             Exportar
           </Button>
           <Button asChild size="sm">
-            <Link href="/clientes/cadastrar">
+            <Link href="/usuarios/cadastrar">
               <IconPlus className="mr-2 size-4" />
-              Novo Cliente
+              Novo Usuário
             </Link>
           </Button>
           <DropdownMenu>
@@ -488,7 +398,7 @@ export function ClientesDataTable({
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  Nenhum cliente encontrado.
+                  Nenhum usuário encontrado.
                 </TableCell>
               </TableRow>
             )}
@@ -502,10 +412,10 @@ export function ClientesDataTable({
             <>
               Mostrando {currentPage * 10 + 1} a{" "}
               {Math.min((currentPage + 1) * 10, totalElements)} de{" "}
-              {totalElements} clientes
+              {totalElements} usuários
             </>
           ) : (
-            "Nenhum cliente encontrado"
+            "Nenhum usuário encontrado"
           )}
         </div>
         <div className="flex items-center gap-6">

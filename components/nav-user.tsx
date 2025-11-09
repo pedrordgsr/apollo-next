@@ -1,6 +1,7 @@
 "use client"
 
 import { useTheme } from "next-themes"
+import { useRouter } from "next/navigation"
 
 import {
   IconCreditCard,
@@ -48,6 +49,7 @@ export function NavUser({
   const { isMobile } = useSidebar()
   const { logout } = useAuth()
   const { setTheme } = useTheme()
+  const router = useRouter()
 
   return (
     <SidebarMenu>
@@ -93,35 +95,27 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push("/usuarios")}>
                 <IconUserCircle />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconCreditCard />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconNotification />
-                Notifications
+                Usuarios
               </DropdownMenuItem>
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>
                   <IconSun />
-                  Change theme
+                  Alterar tema
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
                   <DropdownMenuItem onClick={() => setTheme("light")}>
                     <IconSun />
-                    Light
+                    Claro
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setTheme("dark")}>
                     <IconMoon />
-                    Dark
+                    Escuro
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setTheme("system")}>
                     <IconUserCircle />
-                    System
+                    Sistema
                   </DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>

@@ -2,37 +2,22 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { AppSidebar } from "@/components/app-sidebar"
-import { SiteHeader } from "@/components/site-header"
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
 import { useAuth } from "@/lib/useAuth"
-import { ClientesDataTable } from "./clientes-data-table"
+import { UsuariosDataTable } from "./usuarios-data-table"
 import { api } from "@/lib/api"
 
-interface Cliente {
-  id: number
+interface Usuario {
+  username: string
+  email: string
+  idUsuario: string
+  idPessoa: string
   status: string
   nome: string
-  categoria: string
-  tipoPessoa: string
-  cpfCnpj: string
-  ie: string | null
-  email: string
-  telefone: number
-  endereco: string
-  bairro: string
-  cidade: string
-  uf: string
-  cep: number
-  dataCadastro: string
-  genero: string
+  cargo: string
 }
 
 interface PaginatedResponse {
-  content: Cliente[]
+  content: Usuario[]
   pageable: {
     pageNumber: number
     pageSize: number
@@ -48,10 +33,10 @@ interface PaginatedResponse {
   empty: boolean
 }
 
-export default function ClientesPage() {
+export default function UsuariosPage() {
   const { isAuthenticated, loading } = useAuth()
   const router = useRouter()
-  const [clientes, setClientes] = useState<Cliente[]>([])
+  const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
@@ -66,19 +51,19 @@ export default function ClientesPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchClientes(page)
+      fetchUsuarios(page)
     }
   }, [page, isAuthenticated])
 
-  const fetchClientes = async (pageNumber: number) => {
+  const fetchUsuarios = async (pageNumber: number) => {
     setIsLoading(true)
     setError(null)
     try {
       const response = await api.get<PaginatedResponse>(
-        `/clientes?page=${pageNumber}&size=10`
+        `/usuarios?page=${pageNumber}&size=10`
       )
 
-      setClientes(response.data.content)
+      setUsuarios(response.data.content)
       setTotalPages(response.data.totalPages)
       setTotalElements(response.data.totalElements)
     } catch (err) {
@@ -87,10 +72,10 @@ export default function ClientesPage() {
         if (axiosError.response?.status === 401) {
           setError("Sessão expirada. Faça login novamente.")
         } else {
-          setError(axiosError.response?.data?.message || "Erro ao carregar clientes")
+          setError(axiosError.response?.data?.message || "Erro ao carregar usuários")
         }
       } else {
-        setError("Erro ao carregar clientes")
+        setError("Erro ao carregar usuários")
       }
     } finally {
       setIsLoading(false)
@@ -98,7 +83,7 @@ export default function ClientesPage() {
   }
 
   const handleRefresh = () => {
-    fetchClientes(page)
+    fetchUsuarios(page)
   }
 
   if (loading || !isAuthenticated) {
@@ -126,8 +111,8 @@ export default function ClientesPage() {
                 </div>
               )}
 
-              <ClientesDataTable
-                data={clientes}
+              <UsuariosDataTable
+                data={usuarios}
                 currentPage={page}
                 totalPages={totalPages}
                 totalElements={totalElements}

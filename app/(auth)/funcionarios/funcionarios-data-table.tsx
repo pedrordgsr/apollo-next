@@ -134,9 +134,9 @@ function FuncionarioActions({ funcionario, onRefresh }: FuncionarioActionsProps)
         title={funcionario.dataDemissao ? "Readmitir funcionário" : "Demitir funcionário"}
       >
         {funcionario.dataDemissao ? (
-          <IconToggleRight className="size-4 text-blue-600" />
+          <IconToggleLeft className="size-4 text-gray-400" />
         ) : (
-          <IconToggleLeft className="size-4 text-red-600" />
+          <IconToggleRight className="size-4 text-green-600" />
         )}
         <span className="sr-only">
           {funcionario.dataDemissao ? "Readmitir" : "Demitir"} funcionário
