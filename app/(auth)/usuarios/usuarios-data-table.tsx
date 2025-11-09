@@ -29,6 +29,7 @@ import Link from "next/link"
 import { toast } from "sonner"
 import { api } from "@/lib/api"
 import { exportToExcel } from "@/lib/exportToExcel"
+import { useAuth } from "@/lib/useAuth"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -72,8 +73,17 @@ interface UsuarioActionsProps {
 
 function UsuarioActions({ usuario, onRefresh }: UsuarioActionsProps) {
   const [isToggling, setIsToggling] = React.useState(false)
+  const { user } = useAuth()
+
+  const isCurrentUser = user?.usuarioId === parseInt(usuario.idUsuario)
 
   const handleToggleStatus = async () => {
+    // Validação: impede desativar o usuário atual
+    if (isCurrentUser && usuario.status === "ATIVO") {
+      toast.error("Você não pode desativar seu próprio usuário!")
+      return
+    }
+
     setIsToggling(true)
     try {
       // Determina o novo status baseado no status atual
@@ -110,11 +120,17 @@ function UsuarioActions({ usuario, onRefresh }: UsuarioActionsProps) {
         variant="ghost"
         size="sm"
         onClick={handleToggleStatus}
-        disabled={isToggling}
-        title={usuario.status === "ATIVO" ? "Inativar usuário" : "Ativar usuário"}
+        disabled={isToggling || (isCurrentUser && usuario.status === "ATIVO")}
+        title={
+          isCurrentUser && usuario.status === "ATIVO"
+            ? "Você não pode desativar seu próprio usuário"
+            : usuario.status === "ATIVO" 
+            ? "Inativar usuário" 
+            : "Ativar usuário"
+        }
       >
         {usuario.status === "ATIVO" ? (
-          <IconToggleRight className="size-4 text-green-600" />
+          <IconToggleRight className={`size-4 ${isCurrentUser ? "text-gray-400" : "text-green-600"}`} />
         ) : (
           <IconToggleLeft className="size-4 text-gray-400" />
         )}

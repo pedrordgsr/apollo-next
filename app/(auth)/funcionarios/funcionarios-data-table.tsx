@@ -29,6 +29,7 @@ import Link from "next/link"
 import { toast } from "sonner"
 import { api } from "@/lib/api"
 import { exportToExcel } from "@/lib/exportToExcel"
+import { useAuth } from "@/lib/useAuth"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -54,6 +55,17 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 interface Funcionario {
   id: number
@@ -84,8 +96,18 @@ interface FuncionarioActionsProps {
 
 function FuncionarioActions({ funcionario, onRefresh }: FuncionarioActionsProps) {
   const [isDemitindo, setIsDemitindo] = React.useState(false)
+  const [isAlertOpen, setIsAlertOpen] = React.useState(false)
+  const { user } = useAuth()
+
+  const isCurrentUserEmployee = user?.funcionarioId === funcionario.id
 
   const handleDemitirReadmitir = async () => {
+    // Validação: impede demitir o funcionário do usuário atual
+    if (isCurrentUserEmployee && !funcionario.dataDemissao) {
+      toast.error("Você não pode demitir o funcionário vinculado ao seu próprio usuário!")
+      return
+    }
+
     setIsDemitindo(true)
     try {
       const endpoint = funcionario.dataDemissao 
@@ -121,27 +143,67 @@ function FuncionarioActions({ funcionario, onRefresh }: FuncionarioActionsProps)
       }
     } finally {
       setIsDemitindo(false)
+      setIsAlertOpen(false)
     }
   }
 
   return (
     <div className="flex items-center justify-end gap-1">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={handleDemitirReadmitir}
-        disabled={isDemitindo}
-        title={funcionario.dataDemissao ? "Readmitir funcionário" : "Demitir funcionário"}
-      >
-        {funcionario.dataDemissao ? (
-          <IconToggleLeft className="size-4 text-gray-400" />
-        ) : (
-          <IconToggleRight className="size-4 text-green-600" />
-        )}
-        <span className="sr-only">
-          {funcionario.dataDemissao ? "Readmitir" : "Demitir"} funcionário
-        </span>
-      </Button>
+      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+        <AlertDialogTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsAlertOpen(true)}
+            disabled={isDemitindo || (isCurrentUserEmployee && !funcionario.dataDemissao)}
+            title={
+              isCurrentUserEmployee && !funcionario.dataDemissao
+                ? "Você não pode demitir o funcionário vinculado ao seu próprio usuário"
+                : funcionario.dataDemissao 
+                ? "Readmitir funcionário" 
+                : "Demitir funcionário"
+            }
+          >
+            {funcionario.dataDemissao ? (
+              <IconToggleLeft className="size-4 text-gray-400" />
+            ) : (
+              <IconToggleRight className={`size-4 ${isCurrentUserEmployee ? "text-gray-400" : "text-green-600"}`} />
+            )}
+            <span className="sr-only">
+              {funcionario.dataDemissao ? "Readmitir" : "Demitir"} funcionário
+            </span>
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {funcionario.dataDemissao ? "Confirmar Readmissão" : "Confirmar Demissão"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {funcionario.dataDemissao ? (
+                <>
+                  Você tem certeza que deseja readmitir o funcionário <strong>{funcionario.nome}</strong>?
+                  O funcionário voltará a ter status ativo no sistema.
+                </>
+              ) : (
+                <>
+                  Você tem certeza que deseja demitir o funcionário <strong>{funcionario.nome}</strong>?
+                  Esta ação pode ser revertida posteriormente através da readmissão.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDemitirReadmitir} disabled={isDemitindo}>
+              {isDemitindo 
+                ? (funcionario.dataDemissao ? "Readmitindo..." : "Demitindo...") 
+                : (funcionario.dataDemissao ? "Confirmar Readmissão" : "Confirmar Demissão")
+              }
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <Button asChild variant="ghost" size="sm">
         <Link href={`/funcionarios/cadastrar?id=${funcionario.id}`}>
           <IconPencil className="size-4" />

@@ -32,6 +32,16 @@ import { exportToExcel } from "@/lib/exportToExcel"
 
 import { Button } from "@/components/ui/button"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
@@ -63,6 +73,173 @@ interface Produto {
   qntdEstoque: number
   precoCusto: number
   precoVenda: number
+}
+
+interface StockCellProps {
+  produto: Produto
+  onRefresh: () => void
+}
+
+function StockCell({ produto, onRefresh }: StockCellProps) {
+  const [isEditing, setIsEditing] = React.useState(false)
+  const [newQuantity, setNewQuantity] = React.useState(produto.qntdEstoque.toString())
+  const [showConfirmDialog, setShowConfirmDialog] = React.useState(false)
+  const [isUpdating, setIsUpdating] = React.useState(false)
+
+  const handleClick = () => {
+    setIsEditing(true)
+    setNewQuantity(produto.qntdEstoque.toString())
+  }
+
+  const handleBlur = () => {
+    const quantity = parseInt(newQuantity)
+    if (!isNaN(quantity) && quantity !== produto.qntdEstoque) {
+      setShowConfirmDialog(true)
+    } else {
+      setIsEditing(false)
+      setNewQuantity(produto.qntdEstoque.toString())
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      const quantity = parseInt(newQuantity)
+      if (!isNaN(quantity) && quantity !== produto.qntdEstoque) {
+        setShowConfirmDialog(true)
+      }
+    } else if (e.key === "Escape") {
+      setIsEditing(false)
+      setNewQuantity(produto.qntdEstoque.toString())
+    }
+  }
+
+  const handleConfirm = async () => {
+    const quantity = parseInt(newQuantity)
+    if (isNaN(quantity) || quantity < 0) {
+      toast.error("Quantidade inválida")
+      return
+    }
+
+    setIsUpdating(true)
+    try {
+      const currentStock = produto.qntdEstoque
+      const difference = quantity - currentStock
+
+      if (difference === 0) {
+        setShowConfirmDialog(false)
+        setIsEditing(false)
+        return
+      }
+
+      const endpoint = difference > 0 ? "add" : "sub"
+      const amount = Math.abs(difference)
+
+      const response = await api.put(
+        `/api/produtos/${endpoint}/${produto.id}`,
+        amount
+      )
+
+      toast.success(response.data || "Estoque atualizado com sucesso!")
+      setShowConfirmDialog(false)
+      setIsEditing(false)
+      onRefresh()
+    } catch (err) {
+      if (err && typeof err === "object" && "response" in err) {
+        const axiosError = err as {
+          response?: { status?: number; data?: { message?: string } }
+        }
+        if (axiosError.response?.status === 401) {
+          toast.error("Sessão expirada. Faça login novamente.")
+        } else {
+          toast.error(axiosError.response?.data?.message || "Erro ao atualizar estoque")
+        }
+      } else {
+        toast.error("Erro ao atualizar estoque")
+      }
+      setNewQuantity(produto.qntdEstoque.toString())
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const handleCancel = () => {
+    setShowConfirmDialog(false)
+    setIsEditing(false)
+    setNewQuantity(produto.qntdEstoque.toString())
+  }
+
+  const quantity = parseInt(newQuantity)
+  const currentStock = produto.qntdEstoque
+  const difference = !isNaN(quantity) ? quantity - currentStock : 0
+  const amount = Math.abs(difference)
+
+  return (
+    <>
+      <div className="text-right">
+        {isEditing ? (
+          <Input
+            type="number"
+            min="0"
+            value={newQuantity}
+            onChange={(e) => setNewQuantity(e.target.value)}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            className="w-20 h-8 text-right"
+            autoFocus
+          />
+        ) : (
+          <button
+            onClick={handleClick}
+            className="font-medium hover:underline cursor-pointer"
+            title="Clique para editar"
+          >
+            {produto.qntdEstoque}
+          </button>
+        )}
+      </div>
+
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar alteração de estoque</AlertDialogTitle>
+            <AlertDialogDescription>
+              <div className="space-y-2">
+                <p>
+                  <strong>Produto:</strong> {produto.nome}
+                </p>
+                <p>
+                  <strong>Estoque atual:</strong> {currentStock} unidades
+                </p>
+                <p>
+                  <strong>Novo estoque:</strong> {quantity} unidades
+                </p>
+                <p className="text-base font-semibold mt-4">
+                  {difference > 0 ? (
+                    <span className="text-green-600">
+                      ➕ Adicionar {amount} {amount === 1 ? "unidade" : "unidades"}
+                    </span>
+                  ) : (
+                    <span className="text-red-600">
+                      ➖ Remover {amount} {amount === 1 ? "unidade" : "unidades"}
+                    </span>
+                  )}
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancel} disabled={isUpdating}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirm} disabled={isUpdating}>
+              {isUpdating ? "Atualizando..." : "Confirmar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  )
 }
 
 const createColumns = (onRefresh: () => void): ColumnDef<Produto>[] => [
@@ -109,11 +286,10 @@ const createColumns = (onRefresh: () => void): ColumnDef<Produto>[] => [
   {
     accessorKey: "qntdEstoque",
     header: () => <div className="text-right">Estoque</div>,
-    cell: ({ row }) => (
-      <div className="text-right font-medium">
-        {row.getValue("qntdEstoque")}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const produto = row.original
+      return <StockCell produto={produto} onRefresh={onRefresh} />
+    },
   },
   {
     accessorKey: "precoCusto",
