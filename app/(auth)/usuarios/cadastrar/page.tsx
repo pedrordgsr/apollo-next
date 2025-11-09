@@ -430,7 +430,7 @@ function CadastrarUsuarioContent() {
                     </Field>
                   </FieldGroup>
                 </CardContent>
-                <CardFooter className="flex justify-between">
+                <CardFooter className="flex justify-between mt-5">
                   <Button
                     type="button"
                     variant="outline"
