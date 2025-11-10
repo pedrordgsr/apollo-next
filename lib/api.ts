@@ -38,6 +38,7 @@ export interface LoginResponse {
   username: string
   usuarioId: number
   funcionarioId: number
+  isAdmin: boolean
 }
 
 // Função de login

@@ -5,6 +5,15 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/useAuth"
 import { UsuariosDataTable } from "./usuarios-data-table"
 import { api } from "@/lib/api"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface Usuario {
   username: string
@@ -34,7 +43,7 @@ interface PaginatedResponse {
 }
 
 export default function UsuariosPage() {
-  const { isAuthenticated, loading } = useAuth()
+  const { isAuthenticated, loading, user } = useAuth()
   const router = useRouter()
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [page, setPage] = useState(0)
@@ -42,18 +51,26 @@ export default function UsuariosPage() {
   const [totalElements, setTotalElements] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showAccessDenied, setShowAccessDenied] = useState(false)
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.push("/")
+    } else if (!loading && isAuthenticated && user && !user.isAdmin) {
+      setShowAccessDenied(true)
     }
-  }, [loading, isAuthenticated, router])
+  }, [loading, isAuthenticated, user, router])
+
+  const handleAccessDeniedClose = () => {
+    setShowAccessDenied(false)
+    router.push("/home")
+  }
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && user?.isAdmin) {
       fetchUsuarios(page)
     }
-  }, [page, isAuthenticated])
+  }, [page, isAuthenticated, user])
 
   const fetchUsuarios = async (pageNumber: number) => {
     setIsLoading(true)
@@ -95,6 +112,24 @@ export default function UsuariosPage() {
   }
 
   return (
+    <>
+      <AlertDialog open={showAccessDenied} onOpenChange={setShowAccessDenied}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Acesso Negado</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você não tem permissão para acessar esta página. Apenas administradores podem gerenciar usuários.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={handleAccessDeniedClose}>
+              Voltar para Home
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {user?.isAdmin && (
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
@@ -123,5 +158,7 @@ export default function UsuariosPage() {
             </div>
           </div>
         </div>
+      )}
+    </>
   )
 }

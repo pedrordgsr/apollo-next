@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { login } from "@/lib/api"
+import { useAuth } from "@/lib/useAuth"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -17,6 +18,7 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"form">) {
   const router = useRouter()
+  const { setUserData } = useAuth()
   const [username, setUsername] = useState("")
   const [senha, setSenha] = useState("")
   const [loading, setLoading] = useState(false)
@@ -30,11 +32,14 @@ export function LoginForm({
     try {
       const data = await login({ username, senha })
 
-      // Salvar no localStorage
-      localStorage.setItem("token", data.token)
-      localStorage.setItem("usuarioId", data.usuarioId.toString())
-      localStorage.setItem("username", data.username)
-      localStorage.setItem("funcionarioId", data.funcionarioId.toString())
+      // Salvar dados do usuário no localStorage e no estado
+      setUserData({
+        token: data.token,
+        usuarioId: data.usuarioId,
+        username: data.username,
+        funcionarioId: data.funcionarioId,
+        isAdmin: data.isAdmin,
+      })
 
       // Redirecionar para dashboard
       router.push("/home")
