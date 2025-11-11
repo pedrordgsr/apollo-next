@@ -75,6 +75,7 @@ interface Usuario {
   status: string
   nome: string
   cargo: string
+  isAdmin: boolean
 }
 
 interface UsuarioActionsProps {
@@ -252,6 +253,21 @@ const createColumns = (onRefresh: () => void): ColumnDef<Usuario>[] => [
     ),
   },
   {
+    accessorKey: "isAdmin",
+    header: "Admin",
+    cell: ({ row }) => {
+      const isAdmin = row.getValue("isAdmin") as boolean
+      return (
+        <Badge
+          variant={isAdmin ? "default" : "outline"}
+          className="px-2"
+        >
+          {isAdmin ? "SIM" : "NÃO"}
+        </Badge>
+      )
+    },
+  },
+  {
     accessorKey: "idPessoa",
     header: "ID Funcionário",
     cell: ({ row }) => (
@@ -320,6 +336,7 @@ export function UsuariosDataTable({
       Nome: usuario.nome,
       Email: usuario.email,
       Cargo: usuario.cargo,
+      Admin: usuario.isAdmin ? "SIM" : "NÃO",
       "ID Funcionário": usuario.idPessoa,
       Status: usuario.status,
     }))

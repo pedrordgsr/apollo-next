@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/useAuth"
 import { api } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
 import {
   Card,
   CardContent,
@@ -53,6 +54,7 @@ interface Usuario {
   status: string
   nome: string
   cargo: string
+  isAdmin: boolean
 }
 
 function CadastrarUsuarioContent() {
@@ -64,6 +66,8 @@ function CadastrarUsuarioContent() {
 
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [isTogglingAdmin, setIsTogglingAdmin] = useState(false)
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([])
   const [errors, setErrors] = useState<Partial<Record<keyof UsuarioFormData, string>>>({})
   const [formData, setFormData] = useState<UsuarioFormData>({
@@ -136,6 +140,7 @@ function CadastrarUsuarioContent() {
           confirmarSenha: "",
           funcionarioId: usuario.idPessoa?.toString() || "",
         })
+        setIsAdmin(usuario.isAdmin || false)
       } catch {
         toast.error("Erro ao carregar dados do usuário")
         router.push("/usuarios")
@@ -293,6 +298,33 @@ function CadastrarUsuarioContent() {
     }
   }
 
+  const handleAdminToggle = async (checked: boolean) => {
+    if (!usuarioId) return
+    
+    setIsTogglingAdmin(true)
+    try {
+      await api.post(`/usuarios/${usuarioId}/admin-toggle`)
+      setIsAdmin(checked)
+      toast.success(`Status de administrador ${checked ? 'ativado' : 'desativado'} com sucesso!`)
+    } catch (err) {
+      if (err && typeof err === "object" && "response" in err) {
+        const axiosError = err as {
+          response?: { status?: number; data?: { message?: string } }
+        }
+        toast.error(
+          axiosError.response?.data?.message || 
+          "Erro ao alterar status de administrador"
+        )
+      } else {
+        toast.error("Erro ao alterar status de administrador")
+      }
+      // Reverte o estado em caso de erro
+      setIsAdmin(!checked)
+    } finally {
+      setIsTogglingAdmin(false)
+    }
+  }
+
   if (loading || !isAuthenticated || isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -392,6 +424,27 @@ function CadastrarUsuarioContent() {
                         )}
                       </FieldContent>
                     </Field>
+
+                    {isEditing && (
+                      <Field>
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <FieldLabel htmlFor="admin-toggle">
+                              Administrador
+                            </FieldLabel>
+                            <p className="text-xs text-muted-foreground">
+                              Permite acesso total ao sistema
+                            </p>
+                          </div>
+                          <Switch
+                            id="admin-toggle"
+                            checked={isAdmin}
+                            onCheckedChange={handleAdminToggle}
+                            disabled={isTogglingAdmin}
+                          />
+                        </div>
+                      </Field>
+                    )}
 
                     <Field data-invalid={!!errors.senha}>
                       <FieldLabel htmlFor="senha">
