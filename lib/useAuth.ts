@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import { validateToken } from "./api"
 
 interface User {
   token: string
@@ -33,7 +34,39 @@ export function useAuth() {
     }
     return null
   })
-  const loading = false
+  const [loading, setLoading] = useState(true)
+
+  const logout = useCallback(() => {
+    localStorage.removeItem("token")
+    localStorage.removeItem("usuarioId")
+    localStorage.removeItem("username")
+    localStorage.removeItem("funcionarioId")
+    localStorage.removeItem("isAdmin")
+    setUser(null)
+    router.push("/")
+  }, [router])
+
+  // Validar token ao carregar o hook
+  useEffect(() => {
+    const checkToken = async () => {
+      if (user?.token) {
+        try {
+          const validation = await validateToken()
+          if (!validation.valid) {
+            // Token inválido, fazer logout
+            logout()
+          }
+        } catch (error) {
+          // Erro na validação, fazer logout
+          console.error("Erro ao validar token:", error)
+          logout()
+        }
+      }
+      setLoading(false)
+    }
+
+    checkToken()
+  }, [user?.token, logout]) // Executa ao montar e quando o token mudar
 
   const setUserData = (userData: User) => {
     localStorage.setItem("token", userData.token)
@@ -42,16 +75,6 @@ export function useAuth() {
     localStorage.setItem("funcionarioId", userData.funcionarioId.toString())
     localStorage.setItem("isAdmin", userData.isAdmin.toString())
     setUser(userData)
-  }
-
-  const logout = () => {
-    localStorage.removeItem("token")
-    localStorage.removeItem("usuarioId")
-    localStorage.removeItem("username")
-    localStorage.removeItem("funcionarioId")
-    localStorage.removeItem("isAdmin")
-    setUser(null)
-    router.push("/")
   }
 
   const isAuthenticated = !!user

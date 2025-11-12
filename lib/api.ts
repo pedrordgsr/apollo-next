@@ -26,6 +26,29 @@ api.interceptors.request.use(
   }
 )
 
+// Interceptor para lidar com respostas de erro (ex: token expirado)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token inválido ou expirado
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("token")
+        localStorage.removeItem("usuarioId")
+        localStorage.removeItem("username")
+        localStorage.removeItem("funcionarioId")
+        localStorage.removeItem("isAdmin")
+        
+        // Redirecionar para login se não estiver na página de login
+        if (!window.location.pathname.includes("/login") && window.location.pathname !== "/") {
+          window.location.href = "/"
+        }
+      }
+    }
+    return Promise.reject(error)
+  }
+)
+
 // Tipos para o login
 export interface LoginRequest {
   username: string
@@ -41,8 +64,22 @@ export interface LoginResponse {
   isAdmin: boolean
 }
 
+// Tipos para validação de token
+export interface ValidateTokenResponse {
+  valid: boolean
+  username: string
+  expiration: string
+  message: string
+}
+
 // Função de login
 export const login = async (credentials: LoginRequest): Promise<LoginResponse> => {
   const response = await api.post<LoginResponse>("/api/auth/login", credentials)
+  return response.data
+}
+
+// Função para validar token
+export const validateToken = async (): Promise<ValidateTokenResponse> => {
+  const response = await api.get<ValidateTokenResponse>("/api/auth/validate")
   return response.data
 }
