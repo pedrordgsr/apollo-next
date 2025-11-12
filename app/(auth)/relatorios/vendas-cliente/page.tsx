@@ -147,18 +147,23 @@ export default function VendasClientePage() {
   };
 
   const handleExportar = () => {
-    const dadosExport = pedidosCliente.map((p) => ({
-      "ID Pedido": p.idPedido,
-      Tipo: p.tipo,
-      Status: p.status,
-      "Data Emissão": formatDate(p.dataEmissao),
-      Cliente: p.nomePessoa,
-      Funcionário: p.nomeFuncionario,
-      "Total Custo": p.totalCusto,
-      "Total Venda": p.totalVenda,
-      Lucro: p.totalVenda - p.totalCusto,
-      "Forma de Pagamento": p.formaPagamento,
-    }));
+    const dadosExport = pedidosCliente.map((p) => {
+      const lucro = p.totalVenda - p.totalCusto;
+      const margem = p.totalVenda > 0 ? (lucro / p.totalVenda) * 100 : 0;
+      return {
+        "ID Pedido": p.idPedido,
+        Tipo: p.tipo,
+        Status: p.status,
+        "Data Emissão": formatDate(p.dataEmissao),
+        Cliente: p.nomePessoa,
+        Funcionário: p.nomeFuncionario,
+        "Total Custo": p.totalCusto,
+        "Total Venda": p.totalVenda,
+        Lucro: lucro,
+        "Margem (%)": margem.toFixed(2),
+        "Forma de Pagamento": p.formaPagamento,
+      };
+    });
 
     const ws = XLSX.utils.json_to_sheet(dadosExport);
     const wb = XLSX.utils.book_new();
@@ -187,6 +192,9 @@ export default function VendasClientePage() {
     }),
     { totalVendas: 0, totalCustos: 0, lucro: 0 }
   );
+
+  const ticketMedio = pedidosCliente.length > 0 ? totais.totalVendas / pedidosCliente.length : 0;
+  const margemPercentual = totais.totalVendas > 0 ? (totais.lucro / totais.totalVendas) * 100 : 0;
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -266,7 +274,7 @@ export default function VendasClientePage() {
 
       {pedidosCliente.length > 0 && (
         <>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-5">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">Total de Vendas</CardTitle>
@@ -294,6 +302,26 @@ export default function VendasClientePage() {
               <CardContent>
                 <div className="text-2xl font-bold text-blue-600">
                   {formatCurrency(totais.lucro)}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Margem</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {margemPercentual.toFixed(2)}%
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {formatCurrency(ticketMedio)}
                 </div>
               </CardContent>
             </Card>

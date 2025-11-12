@@ -133,6 +133,7 @@ export default function ComprasPeriodoPage() {
   };
 
   const totalCompras = pedidos.reduce((acc, p) => acc + p.totalCusto, 0);
+  const ticketMedio = pedidos.length > 0 ? totalCompras / pedidos.length : 0;
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -187,19 +188,34 @@ export default function ComprasPeriodoPage() {
 
       {pedidos.length > 0 && (
         <>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total de Compras</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">
-                {formatCurrency(totalCompras)}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {pedidos.length} pedido(s) de compra
-              </p>
-            </CardContent>
-          </Card>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Total de Compras</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">
+                  {formatCurrency(totalCompras)}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {pedidos.length} pedido(s) de compra
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {formatCurrency(ticketMedio)}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Valor médio por pedido
+                </p>
+              </CardContent>
+            </Card>
+          </div>
 
           <Card>
             <CardHeader>
