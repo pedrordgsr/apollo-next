@@ -76,7 +76,7 @@ const data = {
     },
     {
       title: "Relatórios",
-      url: "#",
+      url: "/relatorios",
       icon: IconChartBar,
     }
   ],

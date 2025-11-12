@@ -122,3 +122,23 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Estilos para impressão */
+@media print {
+  .print\:hidden {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .print\:space-y-8 > * + * {
+    margin-top: 2rem;
+  }
+  
+  .print\:mb-8 {
+    margin-bottom: 2rem;
+  }
+}
