@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, TrendingUp, Users, ShoppingCart, FileSpreadsheet, Building2 } from "lucide-react";
+import { FileText, TrendingUp, Users, ShoppingCart, FileSpreadsheet, Building2, Package, Trophy } from "lucide-react";
 import Link from "next/link";
 
 export default function RelatoriosPage() {
@@ -151,6 +151,40 @@ export default function RelatoriosPage() {
               <CardContent>
                 <p className="text-sm text-muted-foreground">
                   Visualize o histórico e estatísticas de compras por fornecedor
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+      </div>
+
+      {/* Seção de Produtos */}
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-2xl font-semibold flex items-center gap-2">
+            <Package className="h-6 w-6" />
+            Produtos
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Relatórios e análises de produtos
+          </p>
+        </div>
+        
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <Link href="/relatorios/produtos-ranking" className="block transition-transform hover:scale-105">
+            <Card className="h-full cursor-pointer hover:shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5" />
+                  Ranking de Produtos
+                </CardTitle>
+                <CardDescription>
+                  Produtos mais vendidos
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Visualize os produtos mais vendidos e rentáveis por período com análise de performance
                 </p>
               </CardContent>
             </Card>
