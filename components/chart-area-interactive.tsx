@@ -32,6 +32,7 @@ import {
 
 export const description = "An interactive area chart"
 
+// Dados mockados para o gráfico (serão substituídos por dados reais em breve)
 const chartData = [
   { date: "2024-04-01", desktop: 222, mobile: 150 },
   { date: "2024-04-02", desktop: 97, mobile: 180 },
@@ -128,21 +129,40 @@ const chartData = [
 
 const chartConfig = {
   visitors: {
-    label: "Visitors",
+    label: "Visitantes",
   },
   desktop: {
-    label: "Desktop",
+    label: "Valor Total (R$)",
     color: "var(--primary)",
   },
   mobile: {
-    label: "Mobile",
+    label: "Quantidade de Pedidos",
     color: "var(--primary)",
   },
 } satisfies ChartConfig
 
-export function ChartAreaInteractive() {
+interface ChartAreaInteractiveProps {
+  data?: Array<{ date: string; valor: number; quantidade: number }>;
+}
+
+export function ChartAreaInteractive({ data }: ChartAreaInteractiveProps) {
   const isMobile = useIsMobile()
   const [timeRange, setTimeRange] = React.useState("90d")
+
+  // Função para formatar valores em moeda
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
+  };
+
+  // Usar dados reais se disponíveis, senão usar mockados
+  const sourceData = data && data.length > 0 ? data : chartData.map(item => ({
+    date: item.date,
+    valor: item.desktop,
+    quantidade: item.mobile,
+  }));
 
   React.useEffect(() => {
     if (isMobile) {
@@ -150,29 +170,36 @@ export function ChartAreaInteractive() {
     }
   }, [isMobile])
 
-  const filteredData = chartData.filter((item) => {
+  const filteredData = sourceData.filter((item) => {
     const date = new Date(item.date)
-    const referenceDate = new Date("2024-06-30")
+    const now = new Date()
     let daysToSubtract = 90
     if (timeRange === "30d") {
       daysToSubtract = 30
     } else if (timeRange === "7d") {
       daysToSubtract = 7
     }
-    const startDate = new Date(referenceDate)
+    const startDate = new Date(now)
     startDate.setDate(startDate.getDate() - daysToSubtract)
     return date >= startDate
   })
 
+  // Converter para formato do gráfico
+  const chartDataFormatted = filteredData.map(item => ({
+    date: item.date,
+    desktop: item.valor,
+    mobile: item.quantidade * 10, // Multiplicar para visualização proporcional
+  }))
+
   return (
     <Card className="@container/card">
       <CardHeader>
-        <CardTitle>Vendas e ticket médio</CardTitle>
+        <CardTitle>Vendas Faturadas</CardTitle>
         <CardDescription>
           <span className="hidden @[540px]/card:block">
-            Total dos últimos 3 meses
+            Total dos pedidos faturados nos últimos 3 meses
           </span>
-          <span className="@[540px]/card:hidden">3 Meses</span>
+          <span className="@[540px]/card:hidden">Últimos 3 meses</span>
         </CardDescription>
         <CardAction>
           <ToggleGroup
@@ -213,7 +240,7 @@ export function ChartAreaInteractive() {
           config={chartConfig}
           className="aspect-auto h-[250px] w-full"
         >
-          <AreaChart data={filteredData}>
+          <AreaChart data={chartDataFormatted}>
             <defs>
               <linearGradient id="fillDesktop" x1="0" y1="0" x2="0" y2="1">
                 <stop
@@ -260,10 +287,18 @@ export function ChartAreaInteractive() {
               content={
                 <ChartTooltipContent
                   labelFormatter={(value) => {
-                    return new Date(value).toLocaleDateString("en-US", {
-                      month: "short",
+                    return new Date(value).toLocaleDateString("pt-BR", {
                       day: "numeric",
+                      month: "short",
+                      year: "numeric",
                     })
+                  }}
+                  formatter={(value, name) => {
+                    if (name === "desktop") {
+                      return [formatCurrency(Number(value)), "Valor Total"];
+                    }
+                    // Para quantidade, dividir por 10 (pois multiplicamos antes)
+                    return [Math.round(Number(value) / 10), "Pedidos"];
                   }}
                   indicator="dot"
                 />

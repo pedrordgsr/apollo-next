@@ -10,28 +10,64 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-export function SectionCards() {
+interface DashboardData {
+  totalFaturado: number;
+  totalPedidos: number;
+  ticketMedio: number;
+  totalCompras: number;
+  tendenciaFaturamento: number;
+  tendenciaPedidos: number;
+  tendenciaTicketMedio: number;
+  tendenciaCompras: number;
+  faturadoMesAnterior: number;
+  pedidosMesAnterior: number;
+  ticketMedioMesAnterior: number;
+  comprasMesAnterior: number;
+}
+
+interface SectionCardsProps {
+  data: DashboardData;
+}
+
+export function SectionCards({ data }: SectionCardsProps) {
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
+  };
+
+  const formatPercentage = (value: number) => {
+    const sign = value >= 0 ? "+" : "";
+    return `${sign}${value.toFixed(1)}%`;
+  };
+
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Total Faturado</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            R$10.250,00
+            {formatCurrency(data.totalFaturado)}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
-              <IconTrendingUp />
-              +12.5%
+              {data.tendenciaFaturamento >= 0 ? <IconTrendingUp /> : <IconTrendingDown />}
+              {formatPercentage(data.tendenciaFaturamento)}
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Tendência de alta este mês <IconTrendingUp className="size-4" />
+            Tendência de {data.tendenciaFaturamento >= 0 ? "alta" : "baixa"} este mês{" "}
+            {data.tendenciaFaturamento >= 0 ? (
+              <IconTrendingUp className="size-4" />
+            ) : (
+              <IconTrendingDown className="size-4" />
+            )}
           </div>
           <div className="text-muted-foreground">
-            No mês passado: R$9.100,00
+            No mês passado: {formatCurrency(data.faturadoMesAnterior)}
           </div>
         </CardFooter>
       </Card>
@@ -39,21 +75,26 @@ export function SectionCards() {
         <CardHeader>
           <CardDescription>Total de Pedidos</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            1,234
+            {data.totalPedidos}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
-              <IconTrendingDown />
-              -20%
+              {data.tendenciaPedidos >= 0 ? <IconTrendingUp /> : <IconTrendingDown />}
+              {formatPercentage(data.tendenciaPedidos)}
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Tendência de baixa neste mês <IconTrendingDown className="size-4" />
+            Tendência de {data.tendenciaPedidos >= 0 ? "alta" : "baixa"} neste mês{" "}
+            {data.tendenciaPedidos >= 0 ? (
+              <IconTrendingUp className="size-4" />
+            ) : (
+              <IconTrendingDown className="size-4" />
+            )}
           </div>
           <div className="text-muted-foreground">
-            No mês passado: 1,543
+            No mês passado: {data.pedidosMesAnterior}
           </div>
         </CardFooter>
       </Card>
@@ -61,40 +102,54 @@ export function SectionCards() {
         <CardHeader>
           <CardDescription>Ticket Médio</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            R$ 83,12
+            {formatCurrency(data.ticketMedio)}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
-              <IconTrendingUp />
-              +12.5%
+              {data.tendenciaTicketMedio >= 0 ? <IconTrendingUp /> : <IconTrendingDown />}
+              {formatPercentage(data.tendenciaTicketMedio)}
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Tendência de alta este mês <IconTrendingUp className="size-4" />
+            Tendência de {data.tendenciaTicketMedio >= 0 ? "alta" : "baixa"} este mês{" "}
+            {data.tendenciaTicketMedio >= 0 ? (
+              <IconTrendingUp className="size-4" />
+            ) : (
+              <IconTrendingDown className="size-4" />
+            )}
           </div>
-          <div className="text-muted-foreground">No mês passado: R$74,00</div>
+          <div className="text-muted-foreground">
+            No mês passado: {formatCurrency(data.ticketMedioMesAnterior)}
+          </div>
         </CardFooter>
       </Card>
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Total Gasto com Compras</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            R$ 4.500,00
+            {formatCurrency(data.totalCompras)}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
-              <IconTrendingUp />
-              +4.5%
+              {data.tendenciaCompras >= 0 ? <IconTrendingUp /> : <IconTrendingDown />}
+              {formatPercentage(data.tendenciaCompras)}
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Tendência de alta este mês <IconTrendingUp className="size-4" />
+            Tendência de {data.tendenciaCompras >= 0 ? "alta" : "baixa"} este mês{" "}
+            {data.tendenciaCompras >= 0 ? (
+              <IconTrendingUp className="size-4" />
+            ) : (
+              <IconTrendingDown className="size-4" />
+            )}
           </div>
-          <div className="text-muted-foreground">No mês passado: R$4.300,00</div>
+          <div className="text-muted-foreground">
+            No mês passado: {formatCurrency(data.comprasMesAnterior)}
+          </div>
         </CardFooter>
       </Card>
     </div>
