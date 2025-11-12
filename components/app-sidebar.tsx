@@ -66,7 +66,7 @@ const data = {
   navMain: [
     {
       title: "Pedidos",
-      url: "/home",
+      url: "/pedidos",
       icon: IconDashboard,
     },
     {
