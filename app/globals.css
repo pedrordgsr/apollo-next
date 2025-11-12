@@ -129,9 +129,84 @@
     display: none !important;
   }
   
+  /* Força fundo branco e texto preto para impressão */
   body {
     background: white !important;
     color: black !important;
+  }
+  
+  /* Remove bordas e fundo dos cards na impressão */
+  [class*="card"],
+  [class*="Card"],
+  [data-slot="card"] {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  
+  /* Garante que todo o texto seja preto na impressão */
+  * {
+    color: black !important;
+    background: transparent !important;
+  }
+  
+  /* Mantém bordas da tabela visíveis com cor apropriada */
+  table {
+    border-collapse: collapse !important;
+  }
+  
+  th,
+  td,
+  [data-slot="table-head"],
+  [data-slot="table-cell"] {
+    border: 1px solid #d1d5db !important;
+  }
+  
+  tr,
+  [data-slot="table-row"] {
+    border-bottom: 1px solid #d1d5db !important;
+  }
+  
+  /* Estilo para cabeçalhos de tabela */
+  th,
+  [data-slot="table-head"] {
+    background: #f3f4f6 !important;
+    font-weight: bold !important;
+  }
+  
+  /* Garante que cabeçalhos sejam em negrito */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: bold !important;
+    page-break-after: avoid !important;
+  }
+  
+  h1 {
+    font-size: 24pt !important;
+  }
+  
+  h2 {
+    font-size: 20pt !important;
+  }
+  
+  h3 {
+    font-size: 16pt !important;
+  }
+  
+  /* Força negrito em elementos com essas classes */
+  .font-bold,
+  .font-semibold,
+  .font-medium {
+    font-weight: bold !important;
+  }
+  
+  /* Estilos para badges na impressão */
+  [data-slot="badge"],
+  [class*="badge"],
+  [class*="Badge"] {
+    border: 1px solid black !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    background: white !important;
   }
   
   .print\:space-y-8 > * + * {
@@ -140,5 +215,40 @@
   
   .print\:mb-8 {
     margin-bottom: 2rem;
+  }
+  
+  /* Remove sombras e efeitos visuais */
+  *[class*="shadow"] {
+    box-shadow: none !important;
+  }
+  
+  /* Garante que valores numéricos importantes sejam visíveis */
+  .text-2xl,
+  .text-3xl {
+    font-weight: bold !important;
+  }
+  
+  /* Cores de texto que devem ser pretas na impressão */
+  .text-green-600,
+  .text-red-600,
+  .text-blue-600,
+  .text-muted-foreground {
+    color: black !important;
+  }
+  
+  /* Evita quebras de página inadequadas */
+  table, figure, img {
+    page-break-inside: avoid !important;
+  }
+  
+  /* Garante que a impressão use toda a largura da página */
+  @page {
+    margin: 1.5cm;
+  }
+  
+  .container {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 }
