@@ -36,6 +36,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
 import { IconArrowLeft, IconLoader2, IconPlus, IconTrash } from "@tabler/icons-react"
 import { Badge } from "@/components/ui/badge"
@@ -44,6 +53,7 @@ interface PedidoItem {
   produtoId: number
   qntd: number
   precoVendaUN: number
+  precoCustoUN?: number
   produtoNome?: string
 }
 
@@ -59,6 +69,7 @@ interface PedidoFormData {
 interface Produto {
   id: number
   nome: string
+  precoCusto: number
   precoVenda: number
   qntdEstoque: number
 }
@@ -67,11 +78,6 @@ interface Pessoa {
   id: number
   nome: string
   tipo: string
-}
-
-interface Funcionario {
-  id: number
-  nome: string
 }
 
 function CadastrarPedidoContent() {
@@ -88,7 +94,7 @@ function CadastrarPedidoContent() {
 
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [pessoas, setPessoas] = useState<Pessoa[]>([])
-  const [funcionarios, setFuncionarios] = useState<Funcionario[]>([])
+  const [funcionarioNome, setFuncionarioNome] = useState<string>("")
 
   const [formData, setFormData] = useState<PedidoFormData>({
     tipo: "VENDA",
@@ -99,11 +105,11 @@ function CadastrarPedidoContent() {
     itens: [],
   })
 
-  const [novoItem, setNovoItem] = useState({
-    produtoId: "",
-    qntd: 1,
-    precoVendaUN: 0,
-  })
+  const [showProdutoDialog, setShowProdutoDialog] = useState(false)
+  const [searchProduto, setSearchProduto] = useState("")
+  const [selectedProduto, setSelectedProduto] = useState<Produto | null>(null)
+  const [quantidadeDialog, setQuantidadeDialog] = useState(1)
+  const [precoDialog, setPrecoDialog] = useState(0)
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -111,14 +117,32 @@ function CadastrarPedidoContent() {
     }
   }, [loading, isAuthenticated, router])
 
+  const fetchFuncionarioNome = async (id: number) => {
+    try {
+      const response = await api.get(`/funcionarios/${id}`)
+      setFuncionarioNome(response.data.nome || `Funcionário ${id}`)
+    } catch {
+      setFuncionarioNome(`Funcionário ${id}`)
+    }
+  }
+
   // Carregar dados auxiliares
   useEffect(() => {
     if (isAuthenticated) {
       fetchProdutos()
       fetchPessoas()
-      fetchFuncionarios()
+      
+      // Buscar funcionário do localStorage
+      const funcionarioId = localStorage.getItem("funcionarioId")
+      if (funcionarioId && !isEditing) {
+        setFormData((prev) => ({
+          ...prev,
+          idFuncionario: funcionarioId,
+        }))
+        fetchFuncionarioNome(Number(funcionarioId))
+      }
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, isEditing])
 
   // Buscar dados do pedido quando estiver visualizando/editando
   useEffect(() => {
@@ -164,15 +188,6 @@ function CadastrarPedidoContent() {
     }
   }
 
-  const fetchFuncionarios = async () => {
-    try {
-      const response = await api.get("/funcionarios?page=0&size=1000")
-      setFuncionarios(response.data.content)
-    } catch {
-      toast.error("Erro ao carregar funcionários")
-    }
-  }
-
   const fetchPedido = async () => {
     setIsLoadingPedido(true)
     try {
@@ -213,6 +228,9 @@ function CadastrarPedidoContent() {
         idFuncionario: pedido.idFuncionario,
         itens: itensComNomes,
       })
+      
+      // Buscar nome do funcionário
+      fetchFuncionarioNome(pedido.idFuncionario)
     } catch (err) {
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as {
@@ -274,11 +292,38 @@ function CadastrarPedidoContent() {
       }
       router.push("/pedidos")
     } catch (err) {
+      console.error("Erro ao salvar pedido:", err)
+      
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as {
-          response?: { status?: number; data?: string }
+          response?: { 
+            status?: number
+            data?: unknown
+          }
         }
-        toast.error(axiosError.response?.data || "Erro ao salvar pedido")
+        
+        // Extrair mensagem de erro do response
+        let errorMessage = "Erro ao salvar pedido"
+        
+        if (axiosError.response?.data) {
+          const errorData = axiosError.response.data
+          
+          // Se for string, usar diretamente
+          if (typeof errorData === "string") {
+            errorMessage = errorData
+          }
+          // Se for objeto com message
+          else if (typeof errorData === "object" && errorData !== null && "message" in errorData) {
+            const dataObj = errorData as { message?: string; localizedMessage?: string }
+            if (typeof dataObj.message === "string") {
+              errorMessage = dataObj.message
+            } else if (typeof dataObj.localizedMessage === "string") {
+              errorMessage = dataObj.localizedMessage
+            }
+          }
+        }
+        
+        toast.error(errorMessage)
       } else {
         toast.error("Erro ao salvar pedido")
       }
@@ -287,31 +332,47 @@ function CadastrarPedidoContent() {
     }
   }
 
-  const handleAddItem = () => {
-    if (!novoItem.produtoId) {
+  const handleOpenProdutoDialog = () => {
+    setShowProdutoDialog(true)
+    setSearchProduto("")
+    setSelectedProduto(null)
+    setQuantidadeDialog(1)
+    setPrecoDialog(0)
+  }
+
+  const handleSelectProduto = (produto: Produto) => {
+    setSelectedProduto(produto)
+    setQuantidadeDialog(1)
+    setPrecoDialog(produto.precoVenda)
+  }
+
+  const handleConfirmAddProduto = () => {
+    if (!selectedProduto) {
       toast.error("Selecione um produto")
       return
     }
 
-    if (novoItem.qntd <= 0) {
+    if (quantidadeDialog <= 0) {
       toast.error("Quantidade deve ser maior que zero")
       return
     }
 
-    if (novoItem.precoVendaUN <= 0) {
+    if (quantidadeDialog > selectedProduto.qntdEstoque) {
+      toast.error(`Estoque insuficiente! Disponível: ${selectedProduto.qntdEstoque}`)
+      return
+    }
+
+    if (precoDialog <= 0) {
       toast.error("Preço deve ser maior que zero")
       return
     }
 
-    const produtoSelecionado = produtos.find(
-      (p) => p.id === Number(novoItem.produtoId)
-    )
-
     const item: PedidoItem = {
-      produtoId: Number(novoItem.produtoId),
-      qntd: novoItem.qntd,
-      precoVendaUN: novoItem.precoVendaUN,
-      produtoNome: produtoSelecionado?.nome,
+      produtoId: selectedProduto.id,
+      qntd: quantidadeDialog,
+      precoVendaUN: precoDialog,
+      precoCustoUN: selectedProduto.precoCusto,
+      produtoNome: selectedProduto.nome,
     }
 
     setFormData((prev) => ({
@@ -319,11 +380,9 @@ function CadastrarPedidoContent() {
       itens: [...prev.itens, item],
     }))
 
-    setNovoItem({
-      produtoId: "",
-      qntd: 1,
-      precoVendaUN: 0,
-    })
+    setShowProdutoDialog(false)
+    setSelectedProduto(null)
+    toast.success("Produto adicionado!")
 
     if (errors.itens) {
       setErrors((prev) => {
@@ -341,14 +400,9 @@ function CadastrarPedidoContent() {
     }))
   }
 
-  const handleProdutoChange = (produtoId: string) => {
-    const produto = produtos.find((p) => p.id === Number(produtoId))
-    setNovoItem({
-      produtoId,
-      qntd: 1,
-      precoVendaUN: produto?.precoVenda || 0,
-    })
-  }
+  const produtosFiltrados = produtos.filter((produto) =>
+    produto.nome.toLowerCase().includes(searchProduto.toLowerCase())
+  )
 
   const calcularTotal = () => {
     return formData.itens.reduce(
@@ -538,30 +592,12 @@ function CadastrarPedidoContent() {
                             Funcionário *
                           </FieldLabel>
                           <FieldContent>
-                            <Select
-                              value={formData.idFuncionario.toString()}
-                              onValueChange={(value) =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  idFuncionario: value,
-                                }))
-                              }
-                              disabled={!canEdit}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {funcionarios.map((funcionario) => (
-                                  <SelectItem
-                                    key={funcionario.id}
-                                    value={funcionario.id.toString()}
-                                  >
-                                    {funcionario.nome}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            <Input
+                              id="idFuncionario"
+                              value={funcionarioNome}
+                              disabled
+                              placeholder="Carregando..."
+                            />
                             {errors.idFuncionario && (
                               <FieldError>{errors.idFuncionario}</FieldError>
                             )}
@@ -636,64 +672,14 @@ function CadastrarPedidoContent() {
                 </CardHeader>
                 <CardContent>
                   {canEdit && (
-                    <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                      <div className="md:col-span-2">
-                        <FieldLabel>Produto</FieldLabel>
-                        <Select
-                          value={novoItem.produtoId}
-                          onValueChange={handleProdutoChange}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione um produto..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {produtos.map((produto) => (
-                              <SelectItem
-                                key={produto.id}
-                                value={produto.id.toString()}
-                              >
-                                {produto.nome} - R$ {produto.precoVenda.toFixed(2)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <FieldLabel>Quantidade</FieldLabel>
-                        <Input
-                          type="number"
-                          min="1"
-                          value={novoItem.qntd}
-                          onChange={(e) =>
-                            setNovoItem((prev) => ({
-                              ...prev,
-                              qntd: Number(e.target.value),
-                            }))
-                          }
-                        />
-                      </div>
-                      <div>
-                        <FieldLabel>Preço Unit.</FieldLabel>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={novoItem.precoVendaUN}
-                          onChange={(e) =>
-                            setNovoItem((prev) => ({
-                              ...prev,
-                              precoVendaUN: Number(e.target.value),
-                            }))
-                          }
-                        />
-                      </div>
+                    <div className="mb-6">
                       <Button
                         type="button"
-                        onClick={handleAddItem}
+                        onClick={handleOpenProdutoDialog}
                         className="w-full"
                       >
                         <IconPlus className="mr-2 size-4" />
-                        Adicionar
+                        Adicionar Produto
                       </Button>
                     </div>
                   )}
@@ -711,46 +697,68 @@ function CadastrarPedidoContent() {
                           <TableRow>
                             <TableHead>Produto</TableHead>
                             <TableHead className="text-right">Quantidade</TableHead>
+                            <TableHead className="text-right">Custo Unit.</TableHead>
                             <TableHead className="text-right">Preço Unit.</TableHead>
+                            <TableHead className="text-right">Margem</TableHead>
                             <TableHead className="text-right">Subtotal</TableHead>
                             {canEdit && <TableHead className="w-[60px]"></TableHead>}
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {formData.itens.map((item, index) => (
-                            <TableRow key={index}>
-                              <TableCell className="font-medium">
-                                {item.produtoNome || `Produto ${item.produtoId}`}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                {item.qntd}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                {new Intl.NumberFormat("pt-BR", {
-                                  style: "currency",
-                                  currency: "BRL",
-                                }).format(item.precoVendaUN)}
-                              </TableCell>
-                              <TableCell className="text-right font-medium">
-                                {new Intl.NumberFormat("pt-BR", {
-                                  style: "currency",
-                                  currency: "BRL",
-                                }).format(item.qntd * item.precoVendaUN)}
-                              </TableCell>
-                              {canEdit && (
-                                <TableCell>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleRemoveItem(index)}
-                                  >
-                                    <IconTrash className="size-4 text-destructive" />
-                                  </Button>
+                          {formData.itens.map((item, index) => {
+                            const margem = item.precoCustoUN && item.precoVendaUN > 0
+                              ? ((item.precoVendaUN - item.precoCustoUN) / item.precoVendaUN * 100).toFixed(2)
+                              : "0.00"
+                            return (
+                              <TableRow key={index}>
+                                <TableCell className="font-medium">
+                                  {item.produtoNome || `Produto ${item.produtoId}`}
                                 </TableCell>
-                              )}
-                            </TableRow>
-                          ))}
+                                <TableCell className="text-right">
+                                  {item.qntd}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {item.precoCustoUN ? (
+                                    new Intl.NumberFormat("pt-BR", {
+                                      style: "currency",
+                                      currency: "BRL",
+                                    }).format(item.precoCustoUN)
+                                  ) : (
+                                    <span className="text-muted-foreground">-</span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {new Intl.NumberFormat("pt-BR", {
+                                    style: "currency",
+                                    currency: "BRL",
+                                  }).format(item.precoVendaUN)}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <Badge variant={Number(margem) > 0 ? 'default' : 'secondary'}>
+                                    {margem}%
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-right font-medium">
+                                  {new Intl.NumberFormat("pt-BR", {
+                                    style: "currency",
+                                    currency: "BRL",
+                                  }).format(item.qntd * item.precoVendaUN)}
+                                </TableCell>
+                                {canEdit && (
+                                  <TableCell>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleRemoveItem(index)}
+                                    >
+                                      <IconTrash className="size-4 text-destructive" />
+                                    </Button>
+                                  </TableCell>
+                                )}
+                              </TableRow>
+                            )
+                          })}
                         </TableBody>
                       </Table>
                     </div>
@@ -762,6 +770,136 @@ function CadastrarPedidoContent() {
                 </CardContent>
               </Card>
             </form>
+
+            {/* Dialog de Seleção de Produto */}
+            <AlertDialog open={showProdutoDialog} onOpenChange={setShowProdutoDialog}>
+              <AlertDialogContent className="max-w-4xl max-h-[80vh]">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Selecionar Produto</AlertDialogTitle>
+                </AlertDialogHeader>
+                
+                <div className="space-y-4">
+                  {/* Campo de Busca */}
+                  <div>
+                    <Input
+                      placeholder="Buscar produto..."
+                      value={searchProduto}
+                      onChange={(e) => setSearchProduto(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+
+                  {/* Tabela de Produtos */}
+                  <div className="border rounded-lg overflow-auto max-h-[300px]">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nome</TableHead>
+                          <TableHead className="text-right">Preço Custo</TableHead>
+                          <TableHead className="text-right">Preço Venda</TableHead>
+                          <TableHead className="text-right">Estoque</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {produtosFiltrados.length > 0 ? (
+                          produtosFiltrados.map((produto) => (
+                            <TableRow
+                              key={produto.id}
+                              className={`cursor-pointer hover:bg-muted ${
+                                selectedProduto?.id === produto.id ? 'bg-muted' : ''
+                              }`}
+                              onClick={() => handleSelectProduto(produto)}
+                            >
+                              <TableCell className="font-medium">{produto.nome}</TableCell>
+                              <TableCell className="text-right">
+                                R$ {produto.precoCusto.toFixed(2)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                R$ {produto.precoVenda.toFixed(2)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Badge variant={produto.qntdEstoque > 0 ? 'default' : 'destructive'}>
+                                  {produto.qntdEstoque}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                              Nenhum produto encontrado
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Inputs de Quantidade e Preço */}
+                  {selectedProduto && (
+                    <div className="space-y-4 pt-4 border-t">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <FieldLabel>Quantidade</FieldLabel>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={quantidadeDialog}
+                            onChange={(e) => setQuantidadeDialog(Number(e.target.value))}
+                          />
+                          {quantidadeDialog > selectedProduto.qntdEstoque && (
+                            <p className="text-sm text-destructive mt-1">
+                              ⚠️ Quantidade maior que estoque disponível ({selectedProduto.qntdEstoque})
+                            </p>
+                          )}
+                        </div>
+                        <div>
+                          <FieldLabel>Preço Unitário</FieldLabel>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={precoDialog}
+                            onChange={(e) => setPrecoDialog(Number(e.target.value))}
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* Exibir Margem Calculada */}
+                      {precoDialog > 0 && (
+                        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                          <span className="text-sm font-medium">Margem de Lucro:</span>
+                          <Badge 
+                            variant={
+                              ((precoDialog - selectedProduto.precoCusto) / precoDialog * 100) > 0 
+                                ? 'default' 
+                                : 'destructive'
+                            }
+                            className="text-base"
+                          >
+                            {((precoDialog - selectedProduto.precoCusto) / precoDialog * 100).toFixed(2)}%
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleConfirmAddProduto}
+                    disabled={
+                      !selectedProduto || 
+                      quantidadeDialog <= 0 || 
+                      (selectedProduto && quantidadeDialog > selectedProduto.qntdEstoque)
+                    }
+                  >
+                    Adicionar ao Pedido
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       </div>
