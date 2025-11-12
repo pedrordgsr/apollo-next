@@ -58,7 +58,7 @@ interface PedidoItem {
 }
 
 interface PedidoFormData {
-  tipo: "COMPRA" | "VENDA" | "DEVOLUCAO"
+  tipo: "COMPRA" | "VENDA"
   vencimento: string
   formaPagamento: string
   idPessoa: number | string
@@ -198,13 +198,14 @@ function CadastrarPedidoContent() {
 
       // Carregar nomes dos produtos nos itens
       const itensComNomes = await Promise.all(
-        pedido.itens.map(async (item: { produtoId: number; qntd: number; precoVendaUN: number }) => {
+        pedido.itens.map(async (item: { produtoId: number; qntd: number; precoVendaUN: number; precoCustoUN?: number }) => {
           try {
             const produtoResponse = await api.get(`/api/produtos/${item.produtoId}`)
             return {
               produtoId: item.produtoId,
               qntd: item.qntd,
               precoVendaUN: item.precoVendaUN,
+              precoCustoUN: item.precoCustoUN || produtoResponse.data.precoCusto,
               produtoNome: produtoResponse.data.nome,
             }
           } catch {
@@ -212,6 +213,7 @@ function CadastrarPedidoContent() {
               produtoId: item.produtoId,
               qntd: item.qntd,
               precoVendaUN: item.precoVendaUN,
+              precoCustoUN: item.precoCustoUN,
               produtoNome: `Produto ${item.produtoId}`,
             }
           }
@@ -483,7 +485,7 @@ function CadastrarPedidoContent() {
                           <FieldContent>
                             <Select
                               value={formData.tipo}
-                              onValueChange={(value: "COMPRA" | "VENDA" | "DEVOLUCAO") =>
+                              onValueChange={(value: "COMPRA" | "VENDA") =>
                                 setFormData((prev) => ({ ...prev, tipo: value }))
                               }
                               disabled={!canEdit}
@@ -494,7 +496,6 @@ function CadastrarPedidoContent() {
                               <SelectContent>
                                 <SelectItem value="VENDA">Venda</SelectItem>
                                 <SelectItem value="COMPRA">Compra</SelectItem>
-                                <SelectItem value="DEVOLUCAO">Devolução</SelectItem>
                               </SelectContent>
                             </Select>
                             {errors.tipo && <FieldError>{errors.tipo}</FieldError>}

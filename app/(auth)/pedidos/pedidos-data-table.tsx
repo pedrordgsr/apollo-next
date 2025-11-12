@@ -77,7 +77,7 @@ interface PedidoProduto {
 interface Pedido {
   idPedido: number
   status: "ORCAMENTO" | "FATURADO" | "CANCELADO"
-  tipo: "COMPRA" | "VENDA" | "DEVOLUCAO"
+  tipo: "COMPRA" | "VENDA"
   dataEmissao: string
   vencimento: string | null
   totalCusto: number
@@ -262,7 +262,6 @@ const createColumns = (onRefresh: () => void): ColumnDef<Pedido>[] => [
       const tipoColors = {
         COMPRA: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
         VENDA: "bg-green-500/10 text-green-700 dark:text-green-400",
-        DEVOLUCAO: "bg-orange-500/10 text-orange-700 dark:text-orange-400",
       }
       return (
         <Badge className={tipoColors[tipo as keyof typeof tipoColors]}>
@@ -514,7 +513,6 @@ export function PedidosDataTable({
                 <SelectItem value="todos">Todos</SelectItem>
                 <SelectItem value="COMPRA">Compra</SelectItem>
                 <SelectItem value="VENDA">Venda</SelectItem>
-                <SelectItem value="DEVOLUCAO">Devolução</SelectItem>
               </SelectContent>
             </Select>
           </div>

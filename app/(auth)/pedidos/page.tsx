@@ -17,7 +17,7 @@ interface PedidoProduto {
 interface Pedido {
   idPedido: number
   status: "ORCAMENTO" | "FATURADO" | "CANCELADO"
-  tipo: "COMPRA" | "VENDA" | "DEVOLUCAO"
+  tipo: "COMPRA" | "VENDA"
   dataEmissao: string
   vencimento: string | null
   totalCusto: number
@@ -153,7 +153,7 @@ export default function PedidosPage() {
           <div className="px-4 lg:px-6">
             <h1 className="text-3xl font-bold tracking-tight">Pedidos</h1>
             <p className="text-muted-foreground mt-2">
-              Gerencie pedidos, orçamentos e devoluções
+              Gerencie pedidos de compra e venda
             </p>
           </div>
           
