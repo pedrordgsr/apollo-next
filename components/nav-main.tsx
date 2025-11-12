@@ -28,9 +28,12 @@ export function NavMain({
             <SidebarMenuButton
               tooltip="Criar novo pedido"
               className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
+              asChild
             >
-              <IconCirclePlusFilled />
-              <span>Criar novo pedido</span>
+              <Link href="/pedidos/cadastrar">
+                <IconCirclePlusFilled />
+                <span>Criar novo pedido</span>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
