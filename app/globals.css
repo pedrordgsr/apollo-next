@@ -153,6 +153,9 @@
   /* Mantém bordas da tabela visíveis com cor apropriada */
   table {
     border-collapse: collapse !important;
+    width: 100% !important;
+    table-layout: fixed !important;
+    font-size: 9pt !important;
   }
   
   th,
@@ -160,11 +163,16 @@
   [data-slot="table-head"],
   [data-slot="table-cell"] {
     border: 1px solid #d1d5db !important;
+    padding: 6px 4px !important;
+    overflow: hidden !important;
+    word-wrap: break-word !important;
+    word-break: break-word !important;
   }
   
   tr,
   [data-slot="table-row"] {
     border-bottom: 1px solid #d1d5db !important;
+    page-break-inside: avoid !important;
   }
   
   /* Estilo para cabeçalhos de tabela */
@@ -173,6 +181,36 @@
     background: #f3f4f6 !important;
     font-weight: bold !important;
   }
+  
+  /* Classes específicas para impressão */
+  .print\:text-xs {
+    font-size: 8pt !important;
+    line-height: 1.2 !important;
+  }
+  
+  .print\:whitespace-normal {
+    white-space: normal !important;
+  }
+  
+  .print\:whitespace-nowrap {
+    white-space: nowrap !important;
+  }
+  
+  .print\:wrap-break-word {
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    hyphens: auto !important;
+  }
+  
+  /* Larguras específicas para colunas na impressão */
+  .print\:w-\[8\%\] { width: 8% !important; max-width: 8% !important; }
+  .print\:w-\[10\%\] { width: 10% !important; max-width: 10% !important; }
+  .print\:w-\[12\%\] { width: 12% !important; max-width: 12% !important; }
+  .print\:w-\[13\%\] { width: 13% !important; max-width: 13% !important; }
+  .print\:w-\[15\%\] { width: 15% !important; max-width: 15% !important; }
+  .print\:w-\[20\%\] { width: 20% !important; max-width: 20% !important; }
+  .print\:w-\[25\%\] { width: 25% !important; max-width: 25% !important; }
   
   /* Garante que cabeçalhos sejam em negrito */
   h1, h2, h3, h4, h5, h6 {
@@ -244,11 +282,18 @@
   /* Garante que a impressão use toda a largura da página */
   @page {
     margin: 1.5cm;
+    size: A4 portrait; /* Modo retrato */
   }
   
   .container {
     max-width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
+  }
+  
+  /* Remove overflow nas tabelas */
+  .overflow-x-auto,
+  [class*="overflow"] {
+    overflow: visible !important;
   }
 }

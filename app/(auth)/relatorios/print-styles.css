@@ -1,0 +1,218 @@
+/* Estilos específicos para impressão de relatórios */
+@media print {
+  /* Remove elementos desnecessários na impressão */
+  .no-print,
+  button:not(.print-button),
+  .sidebar,
+  nav,
+  footer {
+    display: none !important;
+  }
+
+  /* Configurações da página */
+  @page {
+    size: A4 portrait;
+    margin: 15mm;
+  }
+
+  /* Reset de cores para impressão */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Container principal */
+  body {
+    background: white !important;
+    color: black !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  .container {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Cabeçalho do relatório */
+  .print\:block {
+    display: block !important;
+  }
+
+  /* Indicadores detalhados */
+  .print\:mb-8 {
+    margin-bottom: 2rem !important;
+  }
+
+  .print\:space-y-8 > * + * {
+    margin-top: 2rem !important;
+  }
+
+  /* Tabelas */
+  table {
+    width: 100%;
+    border-collapse: collapse !important;
+    font-size: 10pt !important;
+    page-break-inside: auto !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  tbody {
+    display: table-row-group !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    page-break-after: auto !important;
+  }
+
+  th,
+  td {
+    padding: 8px !important;
+    border: 1px solid #d1d5db !important;
+    text-align: left !important;
+  }
+
+  th {
+    background-color: #f3f4f6 !important;
+    font-weight: bold !important;
+    color: black !important;
+  }
+
+  /* Evita quebra de página inadequada */
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Cards de indicadores */
+  .print\:shadow-none {
+    box-shadow: none !important;
+  }
+
+  .print\:border-0 {
+    border: 0 !important;
+  }
+
+  .print\:px-0 {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .print\:border-gray-300 {
+    border-color: #d1d5db !important;
+  }
+
+  /* Grid de indicadores para impressão */
+  .grid {
+    display: grid !important;
+  }
+
+  .grid-cols-2 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .gap-4 {
+    gap: 1rem !important;
+  }
+
+  /* Estilos de texto */
+  .text-2xl {
+    font-size: 1.5rem !important;
+    line-height: 2rem !important;
+  }
+
+  .text-xl {
+    font-size: 1.25rem !important;
+    line-height: 1.75rem !important;
+  }
+
+  .text-lg {
+    font-size: 1.125rem !important;
+    line-height: 1.75rem !important;
+  }
+
+  .text-sm {
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+  }
+
+  .font-bold {
+    font-weight: 700 !important;
+  }
+
+  .font-medium {
+    font-weight: 500 !important;
+  }
+
+  /* Cores específicas que devem ser mantidas na impressão */
+  .text-green-600,
+  .text-red-600,
+  .text-blue-600 {
+    color: black !important;
+    font-weight: bold !important;
+  }
+
+  /* Badges */
+  [data-slot="badge"] {
+    display: inline-block !important;
+    padding: 2px 6px !important;
+    border: 1px solid black !important;
+    border-radius: 4px !important;
+    background: white !important;
+    color: black !important;
+    font-size: 9pt !important;
+  }
+
+  /* Espaçamento */
+  .space-y-2 > * + * {
+    margin-top: 0.5rem !important;
+  }
+
+  .space-y-4 > * + * {
+    margin-top: 1rem !important;
+  }
+
+  .mb-8 {
+    margin-bottom: 2rem !important;
+  }
+
+  /* Bordas */
+  .border-b {
+    border-bottom: 1px solid #d1d5db !important;
+  }
+
+  .pb-2 {
+    padding-bottom: 0.5rem !important;
+  }
+
+  /* Alinhamento de texto */
+  .text-center {
+    text-align: center !important;
+  }
+
+  .text-left {
+    text-align: left !important;
+  }
+
+  .text-right {
+    text-align: right !important;
+  }
+
+  /* Rodapé opcional */
+  .print-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 8pt;
+    color: #666;
+    padding: 5mm;
+    border-top: 1px solid #ccc;
+  }
+}

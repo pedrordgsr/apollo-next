@@ -23,7 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import { Download } from "lucide-react";
+import { Download, Printer } from "lucide-react";
 import * as XLSX from "xlsx";
 
 interface ClienteRelatorio {
@@ -171,6 +171,10 @@ export default function VendasClientePage() {
     XLSX.writeFile(wb, `vendas_cliente_${clienteId}.xlsx`);
   };
 
+  const handleImprimir = () => {
+    window.print();
+  };
+
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
       CONCLUIDO: "default",
@@ -198,14 +202,14 @@ export default function VendasClientePage() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div>
+      <div className="print:hidden">
         <h1 className="text-3xl font-bold tracking-tight">Relatório por Cliente</h1>
         <p className="text-muted-foreground">
           Visualize o histórico e estatísticas de vendas por cliente
         </p>
       </div>
 
-      <Card>
+      <Card className="print:hidden">
         <CardHeader>
           <CardTitle>Filtros</CardTitle>
           <CardDescription>Selecione um cliente e opcionalmente um período</CardDescription>
@@ -262,10 +266,14 @@ export default function VendasClientePage() {
             </div>
           </div>
           {pedidosCliente.length > 0 && (
-            <div className="mt-4">
+            <div className="mt-4 flex gap-2">
               <Button onClick={handleExportar} variant="outline">
                 <Download className="mr-2 h-4 w-4" />
                 Exportar Excel
+              </Button>
+              <Button onClick={handleImprimir} variant="outline">
+                <Printer className="mr-2 h-4 w-4" />
+                Imprimir
               </Button>
             </div>
           )}
@@ -274,7 +282,54 @@ export default function VendasClientePage() {
 
       {pedidosCliente.length > 0 && (
         <>
-          <div className="grid gap-4 md:grid-cols-5">
+          {/* Cabeçalho para Impressão */}
+          <div className="hidden print:block text-center space-y-2 mb-8">
+            <h1 className="text-2xl font-bold">RELATÓRIO DE VENDAS POR CLIENTE</h1>
+            <p className="text-muted-foreground">
+              Cliente: {todosClientes.find(c => c.id.toString() === clienteId)?.nome}
+            </p>
+            {dataInicio && dataFim && (
+              <p className="text-muted-foreground">
+                Período: {new Date(dataInicio).toLocaleDateString("pt-BR")} até {new Date(dataFim).toLocaleDateString("pt-BR")}
+              </p>
+            )}
+            <p className="text-sm text-muted-foreground">
+              Data de Emissão: {new Date().toLocaleDateString("pt-BR")}
+            </p>
+          </div>
+
+          {/* Indicadores Detalhados para Impressão */}
+          <div className="hidden print:block mb-8 space-y-4">
+            <h2 className="text-xl font-bold border-b pb-2">Indicadores de Performance</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total de Vendas</p>
+                <p className="text-lg font-bold text-green-600">{formatCurrency(totais.totalVendas)}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total de Custos</p>
+                <p className="text-lg font-bold text-red-600">{formatCurrency(totais.totalCustos)}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Lucro Bruto</p>
+                <p className="text-lg font-bold text-blue-600">{formatCurrency(totais.lucro)}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Margem de Lucro</p>
+                <p className="text-lg font-bold">{margemPercentual.toFixed(2)}%</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Ticket Médio</p>
+                <p className="text-lg font-bold">{formatCurrency(ticketMedio)}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Quantidade de Pedidos</p>
+                <p className="text-lg font-bold">{pedidosCliente.length}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-5 print:hidden">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">Total de Vendas</CardTitle>
@@ -327,44 +382,44 @@ export default function VendasClientePage() {
             </Card>
           </div>
 
-          <Card>
-            <CardHeader>
+          <Card className="print:shadow-none print:border-0">
+            <CardHeader className="print:px-0">
               <CardTitle>Pedidos ({pedidosCliente.length})</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="rounded-md border">
+            <CardContent className="print:px-0">
+              <div className="rounded-md border print:border-gray-300">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Funcionário</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Custo</TableHead>
-                      <TableHead className="text-right">Venda</TableHead>
-                      <TableHead className="text-right">Lucro</TableHead>
-                      <TableHead>Pagamento</TableHead>
+                      <TableHead className="print:w-[8%]">ID</TableHead>
+                      <TableHead className="print:w-[12%]">Data</TableHead>
+                      <TableHead className="print:w-[20%]">Cliente</TableHead>
+                      <TableHead className="print:w-[15%]">Funcionário</TableHead>
+                      <TableHead className="print:hidden">Status</TableHead>
+                      <TableHead className="text-right print:w-[13%]">Custo</TableHead>
+                      <TableHead className="text-right print:w-[13%]">Venda</TableHead>
+                      <TableHead className="text-right print:w-[13%]">Lucro</TableHead>
+                      <TableHead className="print:w-[12%]">Pagamento</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {pedidosCliente.map((pedido) => (
                       <TableRow key={pedido.idPedido}>
-                        <TableCell className="font-medium">{pedido.idPedido}</TableCell>
-                        <TableCell>{formatDate(pedido.dataEmissao)}</TableCell>
-                        <TableCell>{pedido.nomePessoa}</TableCell>
-                        <TableCell>{pedido.nomeFuncionario}</TableCell>
-                        <TableCell>{getStatusBadge(pedido.status)}</TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="font-medium print:text-xs">{pedido.idPedido}</TableCell>
+                        <TableCell className="print:text-xs print:whitespace-normal">{formatDate(pedido.dataEmissao)}</TableCell>
+                        <TableCell className="print:text-xs print:whitespace-normal print:wrap-break-word">{pedido.nomePessoa}</TableCell>
+                        <TableCell className="print:text-xs print:whitespace-normal print:wrap-break-word">{pedido.nomeFuncionario}</TableCell>
+                        <TableCell className="print:hidden">{getStatusBadge(pedido.status)}</TableCell>
+                        <TableCell className="text-right print:text-xs print:whitespace-nowrap">
                           {formatCurrency(pedido.totalCusto)}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right print:text-xs print:whitespace-nowrap">
                           {formatCurrency(pedido.totalVenda)}
                         </TableCell>
-                        <TableCell className="text-right font-semibold">
+                        <TableCell className="text-right font-semibold print:text-xs print:whitespace-nowrap">
                           {formatCurrency(pedido.totalVenda - pedido.totalCusto)}
                         </TableCell>
-                        <TableCell>{pedido.formaPagamento}</TableCell>
+                        <TableCell className="print:text-xs print:whitespace-normal">{pedido.formaPagamento}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

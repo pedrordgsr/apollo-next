@@ -16,7 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import { Download } from "lucide-react";
+import { Download, Printer } from "lucide-react";
 import * as XLSX from "xlsx";
 
 interface PedidoDetalhado {
@@ -119,6 +119,10 @@ export default function ComprasPeriodoPage() {
     XLSX.writeFile(wb, `compras_periodo_${dataInicio}_${dataFim}.xlsx`);
   };
 
+  const handleImprimir = () => {
+    window.print();
+  };
+
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
       CONCLUIDO: "default",
@@ -137,14 +141,14 @@ export default function ComprasPeriodoPage() {
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      <div>
+      <div className="print:hidden">
         <h1 className="text-3xl font-bold tracking-tight">Compras por Período</h1>
         <p className="text-muted-foreground">
           Visualize todos os pedidos de compra em um período específico
         </p>
       </div>
 
-      <Card>
+      <Card className="print:hidden">
         <CardHeader>
           <CardTitle>Filtros</CardTitle>
           <CardDescription>Selecione o período para visualizar as compras</CardDescription>
@@ -175,12 +179,20 @@ export default function ComprasPeriodoPage() {
               </Button>
             </div>
             {pedidos.length > 0 && (
-              <div className="flex items-end">
-                <Button onClick={handleExportar} variant="outline" className="w-full">
-                  <Download className="mr-2 h-4 w-4" />
-                  Exportar Excel
-                </Button>
-              </div>
+              <>
+                <div className="flex items-end">
+                  <Button onClick={handleExportar} variant="outline" className="w-full">
+                    <Download className="mr-2 h-4 w-4" />
+                    Exportar Excel
+                  </Button>
+                </div>
+                <div className="flex items-end">
+                  <Button onClick={handleImprimir} variant="outline" className="w-full">
+                    <Printer className="mr-2 h-4 w-4" />
+                    Imprimir
+                  </Button>
+                </div>
+              </>
             )}
           </div>
         </CardContent>
@@ -188,7 +200,41 @@ export default function ComprasPeriodoPage() {
 
       {pedidos.length > 0 && (
         <>
-          <div className="grid gap-4 md:grid-cols-2">
+          {/* Cabeçalho para Impressão */}
+          <div className="hidden print:block text-center space-y-2 mb-8">
+            <h1 className="text-2xl font-bold">RELATÓRIO DE COMPRAS POR PERÍODO</h1>
+            <p className="text-muted-foreground">
+              Período: {new Date(dataInicio).toLocaleDateString("pt-BR")} até {new Date(dataFim).toLocaleDateString("pt-BR")}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Data de Emissão: {new Date().toLocaleDateString("pt-BR")}
+            </p>
+          </div>
+
+          {/* Indicadores Detalhados para Impressão */}
+          <div className="hidden print:block mb-8 space-y-4">
+            <h2 className="text-xl font-bold border-b pb-2">Indicadores de Performance</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total de Compras</p>
+                <p className="text-lg font-bold text-red-600">{formatCurrency(totalCompras)}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Ticket Médio</p>
+                <p className="text-lg font-bold">{formatCurrency(ticketMedio)}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Quantidade de Pedidos</p>
+                <p className="text-lg font-bold">{pedidos.length}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Valor Médio por Pedido</p>
+                <p className="text-lg font-bold">{formatCurrency(ticketMedio)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 print:hidden">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">Total de Compras</CardTitle>
@@ -217,36 +263,36 @@ export default function ComprasPeriodoPage() {
             </Card>
           </div>
 
-          <Card>
-            <CardHeader>
+          <Card className="print:shadow-none print:border-0">
+            <CardHeader className="print:px-0">
               <CardTitle>Pedidos ({pedidos.length})</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="rounded-md border">
+            <CardContent className="print:px-0">
+              <div className="rounded-md border print:border-gray-300">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Fornecedor</TableHead>
-                      <TableHead>Funcionário</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
-                      <TableHead>Pagamento</TableHead>
+                      <TableHead className="print:w-[10%]">ID</TableHead>
+                      <TableHead className="print:w-[15%]">Data</TableHead>
+                      <TableHead className="print:w-[25%]">Fornecedor</TableHead>
+                      <TableHead className="print:w-[20%]">Funcionário</TableHead>
+                      <TableHead className="print:hidden">Status</TableHead>
+                      <TableHead className="text-right print:w-[15%]">Total</TableHead>
+                      <TableHead className="print:w-[15%]">Pagamento</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {pedidos.map((pedido) => (
                       <TableRow key={pedido.idPedido}>
-                        <TableCell className="font-medium">{pedido.idPedido}</TableCell>
-                        <TableCell>{formatDate(pedido.dataEmissao)}</TableCell>
-                        <TableCell>{pedido.nomePessoa}</TableCell>
-                        <TableCell>{pedido.nomeFuncionario}</TableCell>
-                        <TableCell>{getStatusBadge(pedido.status)}</TableCell>
-                        <TableCell className="text-right font-semibold">
+                        <TableCell className="font-medium print:text-xs">{pedido.idPedido}</TableCell>
+                        <TableCell className="print:text-xs print:whitespace-normal">{formatDate(pedido.dataEmissao)}</TableCell>
+                        <TableCell className="print:text-xs print:whitespace-normal print:wrap-break-word">{pedido.nomePessoa}</TableCell>
+                        <TableCell className="print:text-xs print:whitespace-normal print:wrap-break-word">{pedido.nomeFuncionario}</TableCell>
+                        <TableCell className="print:hidden">{getStatusBadge(pedido.status)}</TableCell>
+                        <TableCell className="text-right font-semibold print:text-xs print:whitespace-nowrap">
                           {formatCurrency(pedido.totalCusto)}
                         </TableCell>
-                        <TableCell>{pedido.formaPagamento}</TableCell>
+                        <TableCell className="print:text-xs print:whitespace-normal">{pedido.formaPagamento}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
