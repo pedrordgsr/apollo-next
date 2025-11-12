@@ -46,7 +46,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
-import { IconArrowLeft, IconLoader2, IconPlus, IconTrash } from "@tabler/icons-react"
+import { IconArrowLeft, IconLoader2, IconPlus, IconTrash, IconPrinter } from "@tabler/icons-react"
 import { Badge } from "@/components/ui/badge"
 
 interface PedidoItem {
@@ -359,7 +359,8 @@ function CadastrarPedidoContent() {
       return
     }
 
-    if (quantidadeDialog > selectedProduto.qntdEstoque) {
+    // Validar estoque apenas para pedidos de VENDA
+    if (formData.tipo === "VENDA" && quantidadeDialog > selectedProduto.qntdEstoque) {
       toast.error(`Estoque insuficiente! Disponível: ${selectedProduto.qntdEstoque}`)
       return
     }
@@ -415,6 +416,272 @@ function CadastrarPedidoContent() {
 
   const canEdit = !isEditing || pedidoStatus === "ORCAMENTO"
 
+  const handlePrint = () => {
+    const printWindow = window.open("", "_blank")
+    if (!printWindow) {
+      toast.error("Por favor, habilite pop-ups para imprimir")
+      return
+    }
+
+    const date = new Date().toISOString().slice(0, 10)
+    const vencimento = formData.vencimento 
+      ? new Date(formData.vencimento).toLocaleDateString("pt-BR") 
+      : "—"
+
+    const statusColors: Record<string, string> = {
+      ORCAMENTO: "#ca8a04",
+      FATURADO: "#16a34a",
+      CANCELADO: "#dc2626",
+    }
+
+    const tipoColors: Record<string, string> = {
+      COMPRA: "#2563eb",
+      VENDA: "#16a34a",
+    }
+
+    const totalItens = formData.itens.reduce((sum, item) => sum + item.qntd, 0)
+    const totalVenda = calcularTotal()
+
+    const pessoaNome = pessoas.find(p => p.id === Number(formData.idPessoa))?.nome || `Pessoa ${formData.idPessoa}`
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Pedido #${pedidoId || 'Novo'}</title>
+          <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            body {
+              font-family: Arial, sans-serif;
+              padding: 40px;
+              color: #333;
+            }
+            .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: start;
+              margin-bottom: 30px;
+              padding-bottom: 20px;
+              border-bottom: 2px solid #333;
+            }
+            .company-info h1 {
+              font-size: 28px;
+              margin-bottom: 5px;
+            }
+            .company-info p {
+              font-size: 12px;
+              color: #666;
+            }
+            .order-info {
+              text-align: right;
+            }
+            .order-info h2 {
+              font-size: 24px;
+              margin-bottom: 10px;
+            }
+            .badge {
+              display: inline-block;
+              padding: 4px 12px;
+              border-radius: 4px;
+              font-size: 11px;
+              font-weight: bold;
+              margin: 2px;
+            }
+            .section {
+              margin-bottom: 25px;
+            }
+            .section-title {
+              font-size: 14px;
+              font-weight: bold;
+              margin-bottom: 10px;
+              text-transform: uppercase;
+              color: #666;
+            }
+            .info-grid {
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 15px;
+            }
+            .info-item {
+              font-size: 13px;
+            }
+            .info-item label {
+              display: block;
+              font-weight: bold;
+              margin-bottom: 3px;
+              color: #666;
+            }
+            .info-item value {
+              display: block;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 10px;
+            }
+            th {
+              background-color: #f5f5f5;
+              padding: 10px;
+              text-align: left;
+              font-size: 12px;
+              border: 1px solid #ddd;
+            }
+            td {
+              padding: 10px;
+              font-size: 12px;
+              border: 1px solid #ddd;
+            }
+            .text-right {
+              text-align: right;
+            }
+            .totals {
+              margin-top: 20px;
+              display: flex;
+              justify-content: flex-end;
+            }
+            .totals-box {
+              width: 300px;
+              border: 1px solid #ddd;
+            }
+            .totals-row {
+              display: flex;
+              justify-content: space-between;
+              padding: 8px 15px;
+              font-size: 13px;
+              border-bottom: 1px solid #ddd;
+            }
+            .totals-row:last-child {
+              border-bottom: none;
+            }
+            .totals-row.total {
+              font-weight: bold;
+              background-color: #f5f5f5;
+              font-size: 14px;
+            }
+            .footer {
+              margin-top: 50px;
+              padding-top: 20px;
+              border-top: 1px solid #ddd;
+              text-align: center;
+              font-size: 11px;
+              color: #666;
+            }
+            @media print {
+              body {
+                padding: 20px;
+              }
+              .no-print {
+                display: none;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="company-info">
+              <h1>Apollo System</h1>
+              <p>Sistema de Gestão Empresarial</p>
+            </div>
+            <div class="order-info">
+              <h2>Pedido #${pedidoId || 'Novo'}</h2>
+              <div>
+                <span class="badge" style="background-color: ${tipoColors[formData.tipo]}20; color: ${tipoColors[formData.tipo]};">
+                  ${formData.tipo}
+                </span>
+                ${pedidoStatus ? `
+                  <span class="badge" style="background-color: ${statusColors[pedidoStatus]}20; color: ${statusColors[pedidoStatus]};">
+                    ${pedidoStatus}
+                  </span>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Informações do Pedido</div>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Data de Emissão:</label>
+                <value>${date}</value>
+              </div>
+              <div class="info-item">
+                <label>Vencimento:</label>
+                <value>${vencimento}</value>
+              </div>
+              <div class="info-item">
+                <label>${formData.tipo === "COMPRA" ? "Fornecedor" : "Cliente"}:</label>
+                <value>${pessoaNome}</value>
+              </div>
+              <div class="info-item">
+                <label>Funcionário Responsável:</label>
+                <value>${funcionarioNome}</value>
+              </div>
+              <div class="info-item">
+                <label>Forma de Pagamento:</label>
+                <value>${formData.formaPagamento || "—"}</value>
+              </div>
+              <div class="info-item">
+                <label>Total de Itens:</label>
+                <value>${totalItens}</value>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Itens do Pedido</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th class="text-right">Qtd</th>
+                  <th class="text-right">Preço Unit.</th>
+                  <th class="text-right">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${formData.itens.map(item => `
+                  <tr>
+                    <td>${item.produtoNome || `Produto ${item.produtoId}`}</td>
+                    <td class="text-right">${item.qntd}</td>
+                    <td class="text-right">R$ ${item.precoVendaUN.toFixed(2)}</td>
+                    <td class="text-right">R$ ${(item.precoVendaUN * item.qntd).toFixed(2)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+
+            <div class="totals">
+              <div class="totals-box">
+                <div class="totals-row total">
+                  <span>TOTAL:</span>
+                  <span>R$ ${totalVenda.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer">
+            <p>Documento gerado em ${new Date().toLocaleString("pt-BR")}</p>
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `
+
+    printWindow.document.write(html)
+    printWindow.document.close()
+  }
+
   if (loading || !isAuthenticated || isLoadingPedido) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -440,22 +707,34 @@ function CadastrarPedidoContent() {
               <IconArrowLeft className="mr-2 size-4" />
               Voltar
             </Button>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight">
-                {isEditing ? `Pedido #${pedidoId}` : "Novo Pedido"}
-              </h1>
-              {pedidoStatus && (
-                <Badge
-                  className={
-                    pedidoStatus === "ORCAMENTO"
-                      ? "bg-yellow-500/10 text-yellow-700"
-                      : pedidoStatus === "FATURADO"
-                      ? "bg-green-500/10 text-green-700"
-                      : "bg-red-500/10 text-red-700"
-                  }
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-bold tracking-tight">
+                  {isEditing ? `Pedido #${pedidoId}` : "Novo Pedido"}
+                </h1>
+                {pedidoStatus && (
+                  <Badge
+                    className={
+                      pedidoStatus === "ORCAMENTO"
+                        ? "bg-yellow-500/10 text-yellow-700"
+                        : pedidoStatus === "FATURADO"
+                        ? "bg-green-500/10 text-green-700"
+                        : "bg-red-500/10 text-red-700"
+                    }
+                  >
+                    {pedidoStatus}
+                  </Badge>
+                )}
+              </div>
+              {isEditing && formData.itens.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePrint}
                 >
-                  {pedidoStatus}
-                </Badge>
+                  <IconPrinter className="mr-2 size-4" />
+                  Imprimir
+                </Button>
               )}
             </div>
             {!canEdit && (
@@ -488,7 +767,7 @@ function CadastrarPedidoContent() {
                               onValueChange={(value: "COMPRA" | "VENDA") =>
                                 setFormData((prev) => ({ ...prev, tipo: value }))
                               }
-                              disabled={!canEdit}
+                              disabled={!canEdit || formData.itens.length > 0}
                             >
                               <SelectTrigger>
                                 <SelectValue />
@@ -499,6 +778,11 @@ function CadastrarPedidoContent() {
                               </SelectContent>
                             </Select>
                             {errors.tipo && <FieldError>{errors.tipo}</FieldError>}
+                            {formData.itens.length > 0 && canEdit && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Remova os produtos para alterar o tipo
+                              </p>
+                            )}
                           </FieldContent>
                         </Field>
 
@@ -700,7 +984,7 @@ function CadastrarPedidoContent() {
                             <TableHead className="text-right">Quantidade</TableHead>
                             <TableHead className="text-right">Custo Unit.</TableHead>
                             <TableHead className="text-right">Preço Unit.</TableHead>
-                            <TableHead className="text-right">Margem</TableHead>
+                            {formData.tipo === "VENDA" && <TableHead className="text-right">Margem</TableHead>}
                             <TableHead className="text-right">Subtotal</TableHead>
                             {canEdit && <TableHead className="w-[60px]"></TableHead>}
                           </TableRow>
@@ -734,11 +1018,13 @@ function CadastrarPedidoContent() {
                                     currency: "BRL",
                                   }).format(item.precoVendaUN)}
                                 </TableCell>
-                                <TableCell className="text-right">
-                                  <Badge variant={Number(margem) > 0 ? 'default' : 'secondary'}>
-                                    {margem}%
-                                  </Badge>
-                                </TableCell>
+                                {formData.tipo === "VENDA" && (
+                                  <TableCell className="text-right">
+                                    <Badge variant={Number(margem) > 0 ? 'default' : 'secondary'}>
+                                      {margem}%
+                                    </Badge>
+                                  </TableCell>
+                                )}
                                 <TableCell className="text-right font-medium">
                                   {new Intl.NumberFormat("pt-BR", {
                                     style: "currency",
@@ -848,7 +1134,7 @@ function CadastrarPedidoContent() {
                             value={quantidadeDialog}
                             onChange={(e) => setQuantidadeDialog(Number(e.target.value))}
                           />
-                          {quantidadeDialog > selectedProduto.qntdEstoque && (
+                          {formData.tipo === "VENDA" && quantidadeDialog > selectedProduto.qntdEstoque && (
                             <p className="text-sm text-destructive mt-1">
                               ⚠️ Quantidade maior que estoque disponível ({selectedProduto.qntdEstoque})
                             </p>
@@ -866,8 +1152,8 @@ function CadastrarPedidoContent() {
                         </div>
                       </div>
                       
-                      {/* Exibir Margem Calculada */}
-                      {precoDialog > 0 && (
+                      {/* Exibir Margem Calculada - apenas para pedidos de VENDA */}
+                      {formData.tipo === "VENDA" && precoDialog > 0 && (
                         <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                           <span className="text-sm font-medium">Margem de Lucro:</span>
                           <Badge 
@@ -893,7 +1179,7 @@ function CadastrarPedidoContent() {
                     disabled={
                       !selectedProduto || 
                       quantidadeDialog <= 0 || 
-                      (selectedProduto && quantidadeDialog > selectedProduto.qntdEstoque)
+                      (formData.tipo === "VENDA" && selectedProduto && quantidadeDialog > selectedProduto.qntdEstoque)
                     }
                   >
                     Adicionar ao Pedido

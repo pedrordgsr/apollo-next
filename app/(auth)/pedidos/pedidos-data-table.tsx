@@ -19,7 +19,6 @@ import {
   IconChevronsRight,
   IconDownload,
   IconLayoutColumns,
-  IconPencil,
   IconPlus,
   IconSearch,
   IconCheck,
@@ -162,13 +161,6 @@ function PedidoActions({ pedido, onRefresh }: PedidoActionsProps) {
 
         {pedido.status === "ORCAMENTO" && (
           <>
-            <Button asChild variant="ghost" size="sm" title="Editar pedido">
-              <Link href={`/pedidos/cadastrar?id=${pedido.idPedido}`}>
-                <IconPencil className="size-4" />
-                <span className="sr-only">Editar pedido</span>
-              </Link>
-            </Button>
-
             <Button
               variant="ghost"
               size="sm"
@@ -481,7 +473,7 @@ export function PedidosDataTable({
               className="pl-9"
             />
           </div>
-          <div className="relative flex-1 max-w-[200px]">
+          <div className="relative flex-1 max-w-[87px]">
             <Select
               value={(table.getColumn("status")?.getFilterValue() as string) ?? "todos"}
               onValueChange={(value) =>
