@@ -132,13 +132,18 @@ export default function VendasPeriodoPage() {
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+      ORCAMENTO: "secondary",
+      FATURADO: "default",
+      CANCELADO: "destructive",
+      NOTA_CANCELADA: "destructive",
+      // Mapeamentos antigos (retrocompatibilidade)
       CONCLUIDO: "default",
       PENDENTE: "secondary",
-      CANCELADO: "destructive",
     };
+    const statusLabel = status === "NOTA_CANCELADA" ? "NOTA CANCELADA" : status;
     return (
       <Badge variant={variants[status] || "outline"}>
-        {status}
+        {statusLabel}
       </Badge>
     );
   };

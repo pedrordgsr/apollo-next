@@ -432,6 +432,7 @@ function CadastrarPedidoContent() {
       ORCAMENTO: "#ca8a04",
       FATURADO: "#16a34a",
       CANCELADO: "#dc2626",
+      NOTA_CANCELADA: "#ea580c",
     }
 
     const tipoColors: Record<string, string> = {
@@ -719,10 +720,12 @@ function CadastrarPedidoContent() {
                         ? "bg-yellow-500/10 text-yellow-700"
                         : pedidoStatus === "FATURADO"
                         ? "bg-green-500/10 text-green-700"
+                        : pedidoStatus === "NOTA_CANCELADA"
+                        ? "bg-orange-500/10 text-orange-700"
                         : "bg-red-500/10 text-red-700"
                     }
                   >
-                    {pedidoStatus}
+                    {pedidoStatus === "NOTA_CANCELADA" ? "NOTA CANCELADA" : pedidoStatus}
                   </Badge>
                 )}
               </div>

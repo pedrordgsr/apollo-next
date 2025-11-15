@@ -16,7 +16,7 @@ interface PedidoProduto {
 
 interface Pedido {
   idPedido: number
-  status: "ORCAMENTO" | "FATURADO" | "CANCELADO"
+  status: "ORCAMENTO" | "FATURADO" | "CANCELADO" | "NOTA_CANCELADA"
   tipo: "COMPRA" | "VENDA"
   dataEmissao: string
   vencimento: string | null
@@ -120,11 +120,25 @@ export default function PedidosPage() {
       setTotalElements(response.data.totalElements)
     } catch (err) {
       if (err && typeof err === 'object' && 'response' in err) {
-        const axiosError = err as { response?: { status?: number; data?: { message?: string } } }
+        const axiosError = err as { response?: { status?: number; data?: unknown } }
         if (axiosError.response?.status === 401) {
           setError("Sessão expirada. Faça login novamente.")
         } else {
-          setError(axiosError.response?.data?.message || "Erro ao carregar pedidos")
+          // Extrair mensagem de erro do objeto
+          let errorMessage = "Erro ao carregar pedidos"
+          const errorData = axiosError.response?.data
+          
+          if (typeof errorData === "string") {
+            errorMessage = errorData
+          } else if (errorData && typeof errorData === "object") {
+            if ("message" in errorData) {
+              errorMessage = String(errorData.message)
+            } else if ("localizedMessage" in errorData) {
+              errorMessage = String(errorData.localizedMessage)
+            }
+          }
+          
+          setError(errorMessage)
         }
       } else {
         setError("Erro ao carregar pedidos")

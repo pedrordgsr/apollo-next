@@ -75,7 +75,7 @@ interface PedidoProduto {
 
 interface Pedido {
   idPedido: number
-  status: "ORCAMENTO" | "FATURADO" | "CANCELADO"
+  status: "ORCAMENTO" | "FATURADO" | "CANCELADO" | "NOTA_CANCELADA"
   tipo: "COMPRA" | "VENDA"
   dataEmissao: string
   vencimento: string | null
@@ -109,12 +109,22 @@ function PedidoActions({ pedido, onRefresh }: PedidoActionsProps) {
     } catch (err) {
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as {
-          response?: { status?: number; data?: string }
+          response?: { status?: number; data?: unknown }
         }
         if (axiosError.response?.status === 401) {
           toast.error("Sessão expirada. Faça login novamente.")
         } else {
-          toast.error(axiosError.response?.data || "Erro ao faturar pedido")
+          // Extrair mensagem de erro do objeto
+          let errorMessage = "Erro ao faturar pedido"
+          const errorData = axiosError.response?.data
+          
+          if (typeof errorData === "string") {
+            errorMessage = errorData
+          } else if (errorData && typeof errorData === "object" && "message" in errorData) {
+            errorMessage = String(errorData.message)
+          }
+          
+          toast.error(errorMessage)
         }
       } else {
         toast.error("Erro ao faturar pedido")
@@ -128,18 +138,31 @@ function PedidoActions({ pedido, onRefresh }: PedidoActionsProps) {
     setIsProcessing(true)
     try {
       await api.post(`/pedidos/cancel?pedidoId=${pedido.idPedido}`)
-      toast.success("Pedido cancelado com sucesso!")
+      const mensagem = pedido.status === "FATURADO" 
+        ? "Nota fiscal cancelada com sucesso!"
+        : "Pedido cancelado com sucesso!"
+      toast.success(mensagem)
       setShowCancelarDialog(false)
       onRefresh()
     } catch (err) {
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as {
-          response?: { status?: number; data?: string }
+          response?: { status?: number; data?: unknown }
         }
         if (axiosError.response?.status === 401) {
           toast.error("Sessão expirada. Faça login novamente.")
         } else {
-          toast.error(axiosError.response?.data || "Erro ao cancelar pedido")
+          // Extrair mensagem de erro do objeto
+          let errorMessage = "Erro ao cancelar pedido"
+          const errorData = axiosError.response?.data
+          
+          if (typeof errorData === "string") {
+            errorMessage = errorData
+          } else if (errorData && typeof errorData === "object" && "message" in errorData) {
+            errorMessage = String(errorData.message)
+          }
+          
+          toast.error(errorMessage)
         }
       } else {
         toast.error("Erro ao cancelar pedido")
@@ -182,6 +205,18 @@ function PedidoActions({ pedido, onRefresh }: PedidoActionsProps) {
             </Button>
           </>
         )}
+
+        {pedido.status === "FATURADO" && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowCancelarDialog(true)}
+            title="Cancelar nota fiscal"
+          >
+            <IconX className="size-4 text-red-600" />
+            <span className="sr-only">Cancelar nota fiscal</span>
+          </Button>
+        )}
       </div>
 
       {/* Dialog Faturar */}
@@ -212,12 +247,17 @@ function PedidoActions({ pedido, onRefresh }: PedidoActionsProps) {
       <AlertDialog open={showCancelarDialog} onOpenChange={setShowCancelarDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancelar Pedido</AlertDialogTitle>
+            <AlertDialogTitle>
+              {pedido.status === "FATURADO" ? "Cancelar Nota Fiscal" : "Cancelar Pedido"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Deseja realmente cancelar o pedido #{pedido.idPedido}?
+              Deseja realmente cancelar {pedido.status === "FATURADO" ? "a nota fiscal do" : "o"} pedido #{pedido.idPedido}?
               <br />
               <br />
-              Esta ação não poderá ser desfeita.
+              {pedido.status === "FATURADO" 
+                ? "O pedido será marcado como NOTA_CANCELADA e não poderá mais ser alterado."
+                : "O pedido será marcado como CANCELADO e não poderá mais ser alterado."
+              }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -271,10 +311,12 @@ const createColumns = (onRefresh: () => void): ColumnDef<Pedido>[] => [
         ORCAMENTO: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400",
         FATURADO: "bg-green-500/10 text-green-700 dark:text-green-400",
         CANCELADO: "bg-red-500/10 text-red-700 dark:text-red-400",
+        NOTA_CANCELADA: "bg-orange-500/10 text-orange-700 dark:text-orange-400",
       }
+      const statusLabel = status === "NOTA_CANCELADA" ? "NOTA CANCELADA" : status
       return (
         <Badge className={statusColors[status as keyof typeof statusColors]}>
-          {status}
+          {statusLabel}
         </Badge>
       )
     },
@@ -488,6 +530,7 @@ export function PedidosDataTable({
                 <SelectItem value="ORCAMENTO">Orçamento</SelectItem>
                 <SelectItem value="FATURADO">Faturado</SelectItem>
                 <SelectItem value="CANCELADO">Cancelado</SelectItem>
+                <SelectItem value="NOTA_CANCELADA">Nota Cancelada</SelectItem>
               </SelectContent>
             </Select>
           </div>
