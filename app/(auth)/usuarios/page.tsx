@@ -23,6 +23,7 @@ interface Usuario {
   status: string
   nome: string
   cargo: string
+  isAdmin: boolean
 }
 
 interface PaginatedResponse {

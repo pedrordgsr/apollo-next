@@ -242,6 +242,7 @@ const createColumns = (onRefresh: () => void): ColumnDef<Cliente>[] => [
       const genero = row.getValue("genero") as string
       const generoFormatado = genero === "MASCULINO" ? "Masculino" : 
                              genero === "FEMININO" ? "Feminino" : 
+                             genero === "NAO_INFORMAR" ? "Não informado" :
                              genero || "-"
       return <div className="font-medium">{generoFormatado}</div>
     },
