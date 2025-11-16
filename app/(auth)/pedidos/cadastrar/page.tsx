@@ -1147,7 +1147,9 @@ function CadastrarPedidoContent() {
                           )}
                         </div>
                         <div>
-                          <FieldLabel>Preço Unitário</FieldLabel>
+                          <FieldLabel>
+                            {formData.tipo === "COMPRA" ? "Preço de Compra" : "Preço de Venda"}
+                          </FieldLabel>
                           <Input
                             type="number"
                             step="0.01"
