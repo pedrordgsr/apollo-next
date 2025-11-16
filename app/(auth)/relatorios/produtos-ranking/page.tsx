@@ -57,7 +57,7 @@ export default function ProdutosRankingPage() {
 
     setLoading(true);
     try {
-      const response = await api.get("/api/relatorios/produtos/ranking", {
+      const response = await api.get("/relatorios/produtos/ranking", {
         params: {
           dataInicio: convertDateToAPI(dataInicio),
           dataFim: convertDateToAPI(dataFim),

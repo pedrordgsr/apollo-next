@@ -69,7 +69,7 @@ export default function ComprasPeriodoPage() {
     setLoading(true);
     try {
       // Buscar fornecedores do período
-      const fornecedoresResponse = await api.get("/api/relatorios/fornecedores", {
+      const fornecedoresResponse = await api.get("/relatorios/fornecedores", {
         params: {
           dataInicio: convertDateToAPI(dataInicio),
           dataFim: convertDateToAPI(dataFim),
@@ -80,7 +80,7 @@ export default function ComprasPeriodoPage() {
       const todosPedidos: PedidoDetalhado[] = [];
       for (const fornecedor of fornecedoresResponse.data) {
         const detalhesResponse = await api.get(
-          `/api/relatorios/fornecedores/${fornecedor.idPessoa}/detalhes`,
+          `/relatorios/fornecedores/${fornecedor.idPessoa}/detalhes`,
           {
             params: {
               dataInicio: convertDateToAPI(dataInicio),

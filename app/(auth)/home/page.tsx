@@ -62,7 +62,7 @@ export default function Page() {
         });
 
         // Buscar vendas do mês atual (apenas faturados)
-        const responseVendasMes = await api.get("/api/relatorios/vendas/periodo", {
+        const responseVendasMes = await api.get("/relatorios/vendas/periodo", {
           params: {
             dataInicio: dataInicioMes,
             dataFim: dataFim,
@@ -70,7 +70,7 @@ export default function Page() {
         });
 
         // Buscar vendas do mês anterior (apenas faturados)
-        const responseVendasMesAnterior = await api.get("/api/relatorios/vendas/periodo", {
+        const responseVendasMesAnterior = await api.get("/relatorios/vendas/periodo", {
           params: {
             dataInicio: dataInicioMesAnterior,
             dataFim: dataFimMesAnterior,
@@ -78,7 +78,7 @@ export default function Page() {
         });
 
         // Buscar compras do mês atual
-        const responseComprasMes = await api.get("/api/relatorios/compras/periodo", {
+        const responseComprasMes = await api.get("/relatorios/compras/periodo", {
           params: {
             dataInicio: dataInicioMes,
             dataFim: dataFim,
@@ -86,7 +86,7 @@ export default function Page() {
         });
 
         // Buscar compras do mês anterior
-        const responseComprasMesAnterior = await api.get("/api/relatorios/compras/periodo", {
+        const responseComprasMesAnterior = await api.get("/relatorios/compras/periodo", {
           params: {
             dataInicio: dataInicioMesAnterior,
             dataFim: dataFimMesAnterior,
@@ -125,7 +125,7 @@ export default function Page() {
         });
 
         // Buscar todos os clientes do período
-        const clientesResponse = await api.get("/api/relatorios/clientes", {
+        const clientesResponse = await api.get("/relatorios/clientes", {
           params: {
             dataInicio: dataInicio90,
             dataFim: dataFim,
@@ -144,7 +144,7 @@ export default function Page() {
         for (const cliente of clientesResponse.data) {
           try {
             const detalhesResponse = await api.get(
-              `/api/relatorios/clientes/${cliente.idPessoa}/detalhes`,
+              `/relatorios/clientes/${cliente.idPessoa}/detalhes`,
               {
                 params: {
                   dataInicio: dataInicio90,

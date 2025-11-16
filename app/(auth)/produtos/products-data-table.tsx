@@ -136,7 +136,7 @@ function StockCell({ produto, onRefresh }: StockCellProps) {
       const amount = Math.abs(difference)
 
       const response = await api.put(
-        `/api/produtos/${endpoint}/${produto.id}`,
+        `/produtos/${endpoint}/${produto.id}`,
         amount
       )
 
@@ -350,7 +350,7 @@ function ProductActions({ produto, onRefresh }: ProductActionsProps) {
   const handleToggleStatus = async () => {
     setIsToggling(true)
     try {
-      await api.post(`/api/produtos/status/${produto.id}`)
+      await api.post(`/produtos/status/${produto.id}`)
       toast.success(
         `Produto ${produto.status === "ATIVO" ? "inativado" : "ativado"} com sucesso!`
       )

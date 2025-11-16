@@ -251,8 +251,8 @@ function CadastrarUsuarioContent() {
         await api.put(`/usuarios/${usuarioId}`, payload)
         toast.success("Usuário atualizado com sucesso!")
       } else {
-        // Endpoint de registro (POST /api/auth/register)
-        const response = await api.post("/api/auth/register", payload)
+        // Endpoint de registro (POST /auth/register)
+        const response = await api.post("/auth/register", payload)
         
         if (response.data) {
           toast.success("Usuário cadastrado com sucesso!")

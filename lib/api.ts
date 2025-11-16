@@ -74,12 +74,12 @@ export interface ValidateTokenResponse {
 
 // Função de login
 export const login = async (credentials: LoginRequest): Promise<LoginResponse> => {
-  const response = await api.post<LoginResponse>("/api/auth/login", credentials)
+  const response = await api.post<LoginResponse>("/auth/login", credentials)
   return response.data
 }
 
 // Função para validar token
 export const validateToken = async (): Promise<ValidateTokenResponse> => {
-  const response = await api.get<ValidateTokenResponse>("/api/auth/validate")
+  const response = await api.get<ValidateTokenResponse>("/auth/validate")
   return response.data
 }

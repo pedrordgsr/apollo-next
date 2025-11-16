@@ -57,7 +57,7 @@ function CadastrarProdutoContent() {
       const fetchProduto = async () => {
         setIsLoadingProduto(true)
         try {
-          const response = await api.get(`/api/produtos/${produtoId}`)
+          const response = await api.get(`/produtos/${produtoId}`)
           const produto = response.data
           setFormData({
             nome: produto.nome,
@@ -112,11 +112,11 @@ function CadastrarProdutoContent() {
     try {
       if (isEditing) {
         // Atualizar produto existente
-        await api.put(`/api/produtos/${produtoId}`, formData)
+        await api.put(`/produtos/${produtoId}`, formData)
         toast.success("Produto atualizado com sucesso!")
       } else {
         // Criar novo produto
-        await api.post("/api/produtos", formData)
+        await api.post("/produtos", formData)
         toast.success("Produto cadastrado com sucesso!")
       }
       router.push("/produtos")

@@ -51,7 +51,7 @@ export default function VendasConsolidadoPage() {
 
     setLoading(true);
     try {
-      const response = await api.get("/api/relatorios/vendas/periodo", {
+      const response = await api.get("/relatorios/vendas/periodo", {
         params: {
           dataInicio: convertDateToAPI(dataInicio),
           dataFim: convertDateToAPI(dataFim),

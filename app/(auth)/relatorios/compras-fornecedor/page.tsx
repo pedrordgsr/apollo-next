@@ -120,7 +120,7 @@ export default function ComprasFornecedorPage() {
       }
 
       // Buscar dados do fornecedor específico
-      const response = await api.get("/api/relatorios/fornecedores", { params });
+      const response = await api.get("/relatorios/fornecedores", { params });
       const fornecedorData = response.data.find(
         (f: FornecedorRelatorio) => f.idPessoa === parseInt(fornecedorId)
       );
@@ -128,7 +128,7 @@ export default function ComprasFornecedorPage() {
       if (fornecedorData) {
         // Buscar detalhes dos pedidos
         const detalhesResponse = await api.get(
-          `/api/relatorios/fornecedores/${fornecedorData.idPessoa}/detalhes`,
+          `/relatorios/fornecedores/${fornecedorData.idPessoa}/detalhes`,
           { params }
         );
         setPedidosFornecedor(detalhesResponse.data);

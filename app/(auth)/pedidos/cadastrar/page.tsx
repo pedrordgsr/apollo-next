@@ -154,7 +154,7 @@ function CadastrarPedidoContent() {
 
   const fetchProdutos = async () => {
     try {
-      const response = await api.get("/api/produtos?page=0&size=1000")
+      const response = await api.get("/produtos?page=0&size=1000")
       setProdutos(response.data.content)
     } catch {
       toast.error("Erro ao carregar produtos")
@@ -200,7 +200,7 @@ function CadastrarPedidoContent() {
       const itensComNomes = await Promise.all(
         pedido.itens.map(async (item: { produtoId: number; qntd: number; precoVendaUN: number; precoCustoUN?: number }) => {
           try {
-            const produtoResponse = await api.get(`/api/produtos/${item.produtoId}`)
+            const produtoResponse = await api.get(`/produtos/${item.produtoId}`)
             return {
               produtoId: item.produtoId,
               qntd: item.qntd,

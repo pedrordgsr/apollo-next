@@ -49,7 +49,7 @@ export default function ComprasConsolidadoPage() {
 
     setLoading(true);
     try {
-      const response = await api.get("/api/relatorios/compras/periodo", {
+      const response = await api.get("/relatorios/compras/periodo", {
         params: {
           dataInicio: convertDateToAPI(dataInicio),
           dataFim: convertDateToAPI(dataFim),

@@ -120,7 +120,7 @@ export default function VendasClientePage() {
       }
 
       // Buscar dados do cliente específico
-      const response = await api.get("/api/relatorios/clientes", { params });
+      const response = await api.get("/relatorios/clientes", { params });
       const clienteData = response.data.find(
         (c: ClienteRelatorio) => c.idPessoa === parseInt(clienteId)
       );
@@ -128,7 +128,7 @@ export default function VendasClientePage() {
       if (clienteData) {
         // Buscar detalhes dos pedidos
         const detalhesResponse = await api.get(
-          `/api/relatorios/clientes/${clienteData.idPessoa}/detalhes`,
+          `/relatorios/clientes/${clienteData.idPessoa}/detalhes`,
           { params }
         );
         setPedidosCliente(detalhesResponse.data);

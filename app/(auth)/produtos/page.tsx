@@ -66,7 +66,7 @@ export default function ProdutosPage() {
     setError(null)
     try {
       const response = await api.get<PaginatedResponse>(
-        `/api/produtos?page=${pageNumber}&size=10`
+        `/produtos?page=${pageNumber}&size=10`
       )
 
       setProdutos(response.data.content)

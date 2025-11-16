@@ -69,7 +69,7 @@ export default function VendasPeriodoPage() {
     setLoading(true);
     try {
       // Buscar clientes do período
-      const clientesResponse = await api.get("/api/relatorios/clientes", {
+      const clientesResponse = await api.get("/relatorios/clientes", {
         params: {
           dataInicio: convertDateToAPI(dataInicio),
           dataFim: convertDateToAPI(dataFim),
@@ -80,7 +80,7 @@ export default function VendasPeriodoPage() {
       const todosPedidos: PedidoDetalhado[] = [];
       for (const cliente of clientesResponse.data) {
         const detalhesResponse = await api.get(
-          `/api/relatorios/clientes/${cliente.idPessoa}/detalhes`,
+          `/relatorios/clientes/${cliente.idPessoa}/detalhes`,
           {
             params: {
               dataInicio: convertDateToAPI(dataInicio),
