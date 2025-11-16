@@ -288,6 +288,18 @@ const createColumns = (onRefresh: () => void): ColumnDef<Funcionario>[] => [
     },
   },
   {
+    accessorKey: "dataDemissao",
+    header: "Data Demissão",
+    cell: ({ row }) => {
+      const data = row.getValue("dataDemissao") as string | null
+      if (data) {
+        const dataFormatada = new Date(data).toLocaleDateString("pt-BR")
+        return <div className="font-medium">{dataFormatada}</div>
+      }
+      return <div className="font-medium">-</div>
+    },
+  },
+  {
     accessorKey: "email",
     header: "E-mail",
     cell: ({ row }) => (
@@ -333,21 +345,6 @@ const createColumns = (onRefresh: () => void): ColumnDef<Funcionario>[] => [
           className="px-2"
         >
           {status}
-        </Badge>
-      )
-    },
-  },
-  {
-    accessorKey: "dataDemissao",
-    header: "Situação",
-    cell: ({ row }) => {
-      const dataDemissao = row.getValue("dataDemissao") as string | null
-      return (
-        <Badge
-          variant={dataDemissao ? "destructive" : "default"}
-          className="px-2"
-        >
-          {dataDemissao ? "DEMITIDO" : "ATIVO"}
         </Badge>
       )
     },
