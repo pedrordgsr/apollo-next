@@ -743,7 +743,9 @@ function CadastrarPedidoContent() {
             {!canEdit && (
               <p className="text-muted-foreground mt-2">
                 Este pedido não pode ser editado pois já foi{" "}
-                {pedidoStatus?.toLowerCase()}.
+                {pedidoStatus === "NOTA_CANCELADA" 
+                  ? "cancelado (nota cancelada)" 
+                  : pedidoStatus?.toLowerCase()}.
               </p>
             )}
           </div>

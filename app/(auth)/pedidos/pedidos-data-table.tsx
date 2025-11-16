@@ -346,11 +346,19 @@ const createColumns = (onRefresh: () => void): ColumnDef<Pedido>[] => [
       const date = new Date(row.getValue("dataEmissao"))
       return (
         <div className="whitespace-nowrap">
-          {date.toLocaleDateString("pt-BR", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-          })}
+          <div>
+            {date.toLocaleDateString("pt-BR", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            })}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {date.toLocaleTimeString("pt-BR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </div>
         </div>
       )
     },
@@ -492,8 +500,8 @@ export function PedidosDataTable({
   return (
     <div className="w-full space-y-4 px-4 lg:px-6">
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2 flex-1">
-          <div className="relative flex-1 max-w-[200px]">
+        <div className="flex items-center gap-2 flex-1 flex-wrap">
+          <div className="relative w-[150px]">
             <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               placeholder="Filtrar por ID..."
@@ -504,7 +512,7 @@ export function PedidosDataTable({
               className="pl-9"
             />
           </div>
-          <div className="relative flex-1 max-w-[200px]">
+          <div className="relative w-[200px]">
             <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               placeholder="Filtrar por cliente..."
@@ -515,17 +523,17 @@ export function PedidosDataTable({
               className="pl-9"
             />
           </div>
-          <div className="relative flex-1 max-w-[87px]">
+          <div className="relative w-40">
             <Select
               value={(table.getColumn("status")?.getFilterValue() as string) ?? "todos"}
               onValueChange={(value) =>
                 table.getColumn("status")?.setFilterValue(value === "todos" ? "" : value)
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent align="start">
                 <SelectItem value="todos">Todos</SelectItem>
                 <SelectItem value="ORCAMENTO">Orçamento</SelectItem>
                 <SelectItem value="FATURADO">Faturado</SelectItem>
@@ -534,17 +542,17 @@ export function PedidosDataTable({
               </SelectContent>
             </Select>
           </div>
-          <div className="relative flex-1 max-w-[200px]">
+          <div className="relative w-[120px]">
             <Select
               value={(table.getColumn("tipo")?.getFilterValue() as string) ?? "todos"}
               onValueChange={(value) =>
                 table.getColumn("tipo")?.setFilterValue(value === "todos" ? "" : value)
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent align="start">
                 <SelectItem value="todos">Todos</SelectItem>
                 <SelectItem value="COMPRA">Compra</SelectItem>
                 <SelectItem value="VENDA">Venda</SelectItem>
