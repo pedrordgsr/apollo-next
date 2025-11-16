@@ -345,7 +345,8 @@ function CadastrarPedidoContent() {
   const handleSelectProduto = (produto: Produto) => {
     setSelectedProduto(produto)
     setQuantidadeDialog(1)
-    setPrecoDialog(produto.precoVenda)
+    // Para pedidos de COMPRA, usar precoCusto; para VENDA, usar precoVenda
+    setPrecoDialog(formData.tipo === "COMPRA" ? produto.precoCusto : produto.precoVenda)
   }
 
   const handleConfirmAddProduto = () => {
