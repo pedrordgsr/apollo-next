@@ -177,10 +177,10 @@ export function ProdutoSelectorDialog({
                   />
                   {tipo === "VENDA" &&
                     quantidade > selectedProduto.qntdEstoque && (
-                      <p className="text-sm text-destructive mt-1">
+                      <div className="text-sm text-destructive mt-1">
                         ⚠️ Quantidade maior que estoque disponível (
                         {selectedProduto.qntdEstoque})
-                      </p>
+                      </div>
                     )}
                 </div>
                 <div>
