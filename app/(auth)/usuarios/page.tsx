@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/useAuth"
 import { UsuariosDataTable } from "./usuarios-data-table"
 import { api } from "@/lib/api"
@@ -44,8 +43,7 @@ interface PaginatedResponse {
 }
 
 export default function UsuariosPage() {
-  const { isAuthenticated, loading, user } = useAuth()
-  const router = useRouter()
+  const { user } = useAuth()
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
@@ -55,23 +53,21 @@ export default function UsuariosPage() {
   const [showAccessDenied, setShowAccessDenied] = useState(false)
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.push("/")
-    } else if (!loading && isAuthenticated && user && !user.isAdmin) {
+    if (user && !user.isAdmin) {
       setShowAccessDenied(true)
     }
-  }, [loading, isAuthenticated, user, router])
+  }, [user])
 
   const handleAccessDeniedClose = () => {
     setShowAccessDenied(false)
-    router.push("/home")
+    window.location.href = "/home"
   }
 
   useEffect(() => {
-    if (isAuthenticated && user?.isAdmin) {
+    if (user?.isAdmin) {
       fetchUsuarios(page)
     }
-  }, [page, isAuthenticated, user])
+  }, [page, user])
 
   const fetchUsuarios = async (pageNumber: number) => {
     setIsLoading(true)
@@ -104,7 +100,7 @@ export default function UsuariosPage() {
     fetchUsuarios(page)
   }
 
-  if (loading || !isAuthenticated) {
+  if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p>Carregando...</p>

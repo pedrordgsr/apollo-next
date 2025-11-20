@@ -1,14 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { AppSidebar } from "@/components/app-sidebar"
-import { SiteHeader } from "@/components/site-header"
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
-import { useAuth } from "@/lib/useAuth"
 import { ClientesDataTable } from "./clientes-data-table"
 import { api } from "@/lib/api"
 
@@ -49,8 +41,6 @@ interface PaginatedResponse {
 }
 
 export default function ClientesPage() {
-  const { isAuthenticated, loading } = useAuth()
-  const router = useRouter()
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
@@ -59,16 +49,8 @@ export default function ClientesPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.push("/")
-    }
-  }, [loading, isAuthenticated, router])
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchClientes(page)
-    }
-  }, [page, isAuthenticated])
+    fetchClientes(page)
+  }, [page])
 
   const fetchClientes = async (pageNumber: number) => {
     setIsLoading(true)
@@ -99,14 +81,6 @@ export default function ClientesPage() {
 
   const handleRefresh = () => {
     fetchClientes(page)
-  }
-
-  if (loading || !isAuthenticated) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p>Carregando...</p>
-      </div>
-    )
   }
 
   return (

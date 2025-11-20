@@ -1,8 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/lib/useAuth"
 import { PedidosDataTable } from "./pedidos-data-table"
 import { api } from "@/lib/api"
 
@@ -48,8 +46,6 @@ interface PaginatedResponse {
 }
 
 export default function PedidosPage() {
-  const { isAuthenticated, loading } = useAuth()
-  const router = useRouter()
   const [pedidos, setPedidos] = useState<Pedido[]>([])
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
@@ -58,16 +54,8 @@ export default function PedidosPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.push("/")
-    }
-  }, [loading, isAuthenticated, router])
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchPedidos(page)
-    }
-  }, [page, isAuthenticated])
+    fetchPedidos(page)
+  }, [page])
 
   const fetchPedidos = async (pageNumber: number) => {
     setIsLoading(true)
@@ -150,14 +138,6 @@ export default function PedidosPage() {
 
   const handleRefresh = () => {
     fetchPedidos(page)
-  }
-
-  if (loading || !isAuthenticated) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p>Carregando...</p>
-      </div>
-    )
   }
 
   return (

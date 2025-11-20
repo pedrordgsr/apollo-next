@@ -1,14 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { AppSidebar } from "@/components/app-sidebar"
-import { SiteHeader } from "@/components/site-header"
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
-import { useAuth } from "@/lib/useAuth"
 import { FuncionariosDataTable } from "./funcionarios-data-table"
 import { api } from "@/lib/api"
 
@@ -52,8 +44,6 @@ interface PaginatedResponse {
 }
 
 export default function FuncionariosPage() {
-  const { isAuthenticated, loading } = useAuth()
-  const router = useRouter()
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([])
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
@@ -62,16 +52,8 @@ export default function FuncionariosPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.push("/")
-    }
-  }, [loading, isAuthenticated, router])
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchFuncionarios(page)
-    }
-  }, [page, isAuthenticated])
+    fetchFuncionarios(page)
+  }, [page])
 
   const fetchFuncionarios = async (pageNumber: number) => {
     setIsLoading(true)
@@ -102,14 +84,6 @@ export default function FuncionariosPage() {
 
   const handleRefresh = () => {
     fetchFuncionarios(page)
-  }
-
-  if (loading || !isAuthenticated) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p>Carregando...</p>
-      </div>
-    )
   }
 
   return (

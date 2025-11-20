@@ -2,10 +2,6 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { AppSidebar } from "@/components/app-sidebar"
-import { SiteHeader } from "@/components/site-header"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
-import { useAuth } from "@/lib/useAuth"
 import { api } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -29,7 +25,6 @@ import { IconArrowLeft, IconLoader2 } from "@tabler/icons-react"
 import { produtoSchema, type ProdutoFormData } from "@/lib/validations"
 
 function CadastrarProdutoContent() {
-  const { isAuthenticated, loading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const produtoId = searchParams.get("id")
@@ -45,15 +40,9 @@ function CadastrarProdutoContent() {
     precoVenda: 0,
   })
 
-  useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.push("/")
-    }
-  }, [loading, isAuthenticated, router])
-
   // Buscar dados do produto quando estiver editando
   useEffect(() => {
-    if (isAuthenticated && produtoId) {
+    if (produtoId) {
       const fetchProduto = async () => {
         setIsLoadingProduto(true)
         try {
@@ -88,7 +77,7 @@ function CadastrarProdutoContent() {
 
       fetchProduto()
     }
-  }, [isAuthenticated, produtoId, router])
+  }, [produtoId, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -165,7 +154,7 @@ function CadastrarProdutoContent() {
   const margemPercent = precoVendaVal > 0 ? (profit / precoVendaVal) * 100 : null
   const markupPercent = precoCustoVal > 0 ? (profit / precoCustoVal) * 100 : null
 
-  if (loading || !isAuthenticated || isLoadingProduto) {
+  if (isLoadingProduto) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-2">

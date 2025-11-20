@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useAuth } from "@/lib/useAuth"
 import { api } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import {
@@ -25,7 +24,6 @@ import {
 import type { PedidoItem, PedidoFormData, Produto, Pessoa } from "@/components/pedidos"
 
 function CadastrarPedidoContent() {
-  const { isAuthenticated, loading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const pedidoId = searchParams.get("id")
@@ -51,12 +49,6 @@ function CadastrarPedidoContent() {
 
   const [showProdutoDialog, setShowProdutoDialog] = useState(false)
 
-  useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.push("/")
-    }
-  }, [loading, isAuthenticated, router])
-
   const fetchFuncionarioNome = async (id: number) => {
     try {
       const response = await api.get(`/funcionarios/${id}`)
@@ -68,29 +60,27 @@ function CadastrarPedidoContent() {
 
   // Carregar dados auxiliares
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchProdutos()
-      fetchPessoas()
-      
-      // Buscar funcionário do localStorage
-      const funcionarioId = localStorage.getItem("funcionarioId")
-      if (funcionarioId && !isEditing) {
-        setFormData((prev) => ({
-          ...prev,
-          idFuncionario: funcionarioId,
-        }))
-        fetchFuncionarioNome(Number(funcionarioId))
-      }
+    fetchProdutos()
+    fetchPessoas()
+    
+    // Buscar funcionário do localStorage
+    const funcionarioId = localStorage.getItem("funcionarioId")
+    if (funcionarioId && !isEditing) {
+      setFormData((prev) => ({
+        ...prev,
+        idFuncionario: funcionarioId,
+      }))
+      fetchFuncionarioNome(Number(funcionarioId))
     }
-  }, [isAuthenticated, isEditing])
+  }, [isEditing])
 
   // Buscar dados do pedido quando estiver visualizando/editando
   useEffect(() => {
-    if (isAuthenticated && pedidoId) {
+    if (pedidoId) {
       fetchPedido()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, pedidoId])
+  }, [pedidoId])
 
   const fetchProdutos = async () => {
     try {
@@ -341,7 +331,7 @@ function CadastrarPedidoContent() {
     printWindow.document.close()
   }
 
-  if (loading || !isAuthenticated || isLoadingPedido) {
+  if (isLoadingPedido) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-2">

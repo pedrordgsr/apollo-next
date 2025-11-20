@@ -2,13 +2,6 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { AppSidebar } from "@/components/app-sidebar"
-import { SiteHeader } from "@/components/site-header"
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
-import { useAuth } from "@/lib/useAuth"
 import { api } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -39,7 +32,6 @@ import { IconArrowLeft, IconLoader2 } from "@tabler/icons-react"
 import { clienteSchema, type ClienteFormData } from "@/lib/validations"
 
 function CadastrarClienteContent() {
-  const { isAuthenticated, loading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const clienteId = searchParams.get("id")
@@ -62,12 +54,6 @@ function CadastrarClienteContent() {
     cep: "",
     genero: "NAO_INFORMAR",
   })
-
-  useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.push("/")
-    }
-  }, [loading, isAuthenticated, router])
 
   useEffect(() => {
     const fetchCliente = async () => {
@@ -98,10 +84,10 @@ function CadastrarClienteContent() {
       }
     }
 
-    if (isEditing && isAuthenticated) {
+    if (isEditing) {
       fetchCliente()
     }
-  }, [clienteId, isAuthenticated, isEditing, router])
+  }, [clienteId, isEditing, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -217,7 +203,7 @@ function CadastrarClienteContent() {
     }
   }
 
-  if (loading || !isAuthenticated || isLoading) {
+  if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-2">

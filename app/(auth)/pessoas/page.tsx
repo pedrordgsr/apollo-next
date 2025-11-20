@@ -1,14 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { AppSidebar } from "@/components/app-sidebar"
-import { SiteHeader } from "@/components/site-header"
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
-import { useAuth } from "@/lib/useAuth"
 import { PessoasDataTable } from "./pessoas-data-table"
 import { api } from "@/lib/api"
 
@@ -48,8 +40,6 @@ interface PaginatedResponse {
 }
 
 export default function PessoasPage() {
-  const { isAuthenticated, loading } = useAuth()
-  const router = useRouter()
   const [pessoas, setPessoas] = useState<Pessoa[]>([])
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
@@ -58,16 +48,8 @@ export default function PessoasPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.push("/")
-    }
-  }, [loading, isAuthenticated, router])
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchPessoas(page)
-    }
-  }, [page, isAuthenticated])
+    fetchPessoas(page)
+  }, [page])
 
   const fetchPessoas = async (pageNumber: number) => {
     setIsLoading(true)
@@ -98,14 +80,6 @@ export default function PessoasPage() {
 
   const handleRefresh = () => {
     fetchPessoas(page)
-  }
-
-  if (loading || !isAuthenticated) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p>Carregando...</p>
-      </div>
-    )
   }
 
   return (
