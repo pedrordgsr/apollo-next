@@ -43,6 +43,7 @@ interface PaginatedResponse {
 export default function ClientesPage() {
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(10)
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
@@ -50,10 +51,10 @@ export default function ClientesPage() {
   const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
-    fetchClientes(page, searchTerm)
-  }, [page, searchTerm])
+    fetchClientes(page, searchTerm, pageSize)
+  }, [page, searchTerm, pageSize])
 
-  const fetchClientes = async (pageNumber: number, search: string = "") => {
+  const fetchClientes = async (pageNumber: number, search: string = "", size: number = 10) => {
     setIsLoading(true)
     setError(null)
     try {
@@ -69,17 +70,16 @@ export default function ClientesPage() {
         const clientesData = response.data.content.filter((p: Cliente) => p.categoria === "CLIENTE")
         
         // Calcular paginação local
-        const pageSize = 10
         const start = 0 // Sempre mostrar do início pois já estamos na página correta do backend
-        const end = Math.min(pageSize, clientesData.length)
+        const end = Math.min(size, clientesData.length)
         
         setClientes(clientesData.slice(start, end))
         setTotalElements(clientesData.length)
-        setTotalPages(Math.ceil(clientesData.length / pageSize))
+        setTotalPages(Math.ceil(clientesData.length / size))
       } else {
         // Usar endpoint direto de clientes
         response = await api.get<PaginatedResponse>(
-          `/clientes?page=${pageNumber}&size=10`
+          `/clientes?page=${pageNumber}&size=${size}`
         )
         
         setClientes(response.data.content)
@@ -103,12 +103,17 @@ export default function ClientesPage() {
   }
 
   const handleRefresh = () => {
-    fetchClientes(page, searchTerm)
+    fetchClientes(page, searchTerm, pageSize)
   }
 
   const handleSearch = (term: string) => {
     setSearchTerm(term)
     setPage(0) // Voltar para primeira página ao buscar
+  }
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize)
+    setPage(0) // Voltar para primeira página ao mudar tamanho
   }
 
   return (
@@ -138,6 +143,8 @@ export default function ClientesPage() {
                 onRefresh={handleRefresh}
                 onSearch={handleSearch}
                 searchTerm={searchTerm}
+                pageSize={pageSize}
+                onPageSizeChange={handlePageSizeChange}
               />
             </div>
           </div>

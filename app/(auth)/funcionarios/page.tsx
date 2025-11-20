@@ -46,6 +46,7 @@ interface PaginatedResponse {
 export default function FuncionariosPage() {
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([])
   const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(10)
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
@@ -53,36 +54,31 @@ export default function FuncionariosPage() {
   const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
-    fetchFuncionarios(page, searchTerm)
-  }, [page, searchTerm])
+    fetchFuncionarios(page, searchTerm, pageSize)
+  }, [page, searchTerm, pageSize])
 
-  const fetchFuncionarios = async (pageNumber: number, search: string = "") => {
+  const fetchFuncionarios = async (pageNumber: number, search: string = "", size: number = 10) => {
     setIsLoading(true)
     setError(null)
     try {
       let response: { data: PaginatedResponse };
       
       if (search) {
-        // Usar endpoint de busca - buscar mais resultados para filtrar por categoria
         response = await api.get<PaginatedResponse>(
           `/pessoas/buscar?name=${encodeURIComponent(search)}&page=${pageNumber}&size=50`
         )
         
-        // Filtrar apenas funcionários
         const funcionariosData = response.data.content.filter((p: Funcionario) => p.categoria === "FUNCIONARIO")
         
-        // Calcular paginação local
-        const pageSize = 10
         const start = 0
-        const end = Math.min(pageSize, funcionariosData.length)
+        const end = Math.min(size, funcionariosData.length)
         
         setFuncionarios(funcionariosData.slice(start, end))
         setTotalElements(funcionariosData.length)
-        setTotalPages(Math.ceil(funcionariosData.length / pageSize))
+        setTotalPages(Math.ceil(funcionariosData.length / size))
       } else {
-        // Usar endpoint direto de funcionários
         response = await api.get<PaginatedResponse>(
-          `/funcionarios?page=${pageNumber}&size=10`
+          `/funcionarios?page=${pageNumber}&size=${size}`
         )
         
         setFuncionarios(response.data.content)
@@ -106,11 +102,16 @@ export default function FuncionariosPage() {
   }
 
   const handleRefresh = () => {
-    fetchFuncionarios(page, searchTerm)
+    fetchFuncionarios(page, searchTerm, pageSize)
   }
 
   const handleSearch = (term: string) => {
     setSearchTerm(term)
+    setPage(0)
+  }
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize)
     setPage(0)
   }
 
@@ -141,6 +142,8 @@ export default function FuncionariosPage() {
                 onRefresh={handleRefresh}
                 onSearch={handleSearch}
                 searchTerm={searchTerm}
+                pageSize={pageSize}
+                onPageSizeChange={handlePageSizeChange}
               />
             </div>
           </div>

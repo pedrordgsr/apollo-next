@@ -411,6 +411,8 @@ interface ProductsDataTableProps {
   onRefresh: () => void
   onSearch: (term: string) => void
   searchTerm: string
+  pageSize: number
+  onPageSizeChange: (size: number) => void
 }
 
 export function ProductsDataTable({
@@ -423,6 +425,8 @@ export function ProductsDataTable({
   onRefresh,
   onSearch,
   searchTerm,
+  pageSize,
+  onPageSizeChange,
 }: ProductsDataTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "id", desc: false }
@@ -486,7 +490,7 @@ export function ProductsDataTable({
       columnVisibility,
       pagination: {
         pageIndex: currentPage,
-        pageSize: 10,
+        pageSize: pageSize,
       },
     },
   })
@@ -610,16 +614,36 @@ export function ProductsDataTable({
       </div>
 
       <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          {totalElements > 0 ? (
-            <>
-              Mostrando {currentPage * 10 + 1} a{" "}
-              {Math.min((currentPage + 1) * 10, totalElements)} de{" "}
-              {totalElements} produtos
-            </>
-          ) : (
-            "Nenhum produto encontrado"
-          )}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium">Mostrar</p>
+            <Select
+              value={pageSize.toString()}
+              onValueChange={(value) => onPageSizeChange(Number(value))}
+            >
+              <SelectTrigger className="h-8 w-[70px]">
+                <SelectValue>{pageSize}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {totalElements > 0 ? (
+              <>
+                Mostrando {currentPage * pageSize + 1} a{" "}
+                {Math.min((currentPage + 1) * pageSize, totalElements)} de{" "}
+                {totalElements} produtos
+              </>
+            ) : (
+              "Nenhum produto encontrado"
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">

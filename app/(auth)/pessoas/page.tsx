@@ -42,22 +42,26 @@ interface PaginatedResponse {
 export default function PessoasPage() {
   const [pessoas, setPessoas] = useState<Pessoa[]>([])
   const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(10)
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
-    fetchPessoas(page)
-  }, [page])
+    fetchPessoas(page, searchTerm, pageSize)
+  }, [page, searchTerm, pageSize])
 
-  const fetchPessoas = async (pageNumber: number) => {
+  const fetchPessoas = async (pageNumber: number, search: string = "", size: number = 10) => {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await api.get<PaginatedResponse>(
-        `/pessoas?page=${pageNumber}&size=10`
-      )
+      const endpoint = search
+        ? `/pessoas/buscar?name=${encodeURIComponent(search)}&page=${pageNumber}&size=${size}`
+        : `/pessoas?page=${pageNumber}&size=${size}`
+      
+      const response = await api.get<PaginatedResponse>(endpoint)
 
       setPessoas(response.data.content)
       setTotalPages(response.data.totalPages)
@@ -79,7 +83,17 @@ export default function PessoasPage() {
   }
 
   const handleRefresh = () => {
-    fetchPessoas(page)
+    fetchPessoas(page, searchTerm, pageSize)
+  }
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term)
+    setPage(0)
+  }
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize)
+    setPage(0)
   }
 
   return (
@@ -107,6 +121,10 @@ export default function PessoasPage() {
                 isLoading={isLoading}
                 onPageChange={setPage}
                 onRefresh={handleRefresh}
+                onSearch={handleSearch}
+                searchTerm={searchTerm}
+                pageSize={pageSize}
+                onPageSizeChange={handlePageSizeChange}
               />
             </div>
           </div>

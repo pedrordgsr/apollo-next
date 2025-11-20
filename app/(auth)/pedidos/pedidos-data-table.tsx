@@ -422,6 +422,8 @@ interface PedidosDataTableProps {
   isLoading: boolean
   onPageChange: (page: number) => void
   onRefresh: () => void
+  pageSize: number
+  onPageSizeChange: (size: number) => void
 }
 
 export function PedidosDataTable({
@@ -432,6 +434,8 @@ export function PedidosDataTable({
   isLoading,
   onPageChange,
   onRefresh,
+  pageSize,
+  onPageSizeChange,
 }: PedidosDataTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "idPedido", desc: true },
@@ -492,7 +496,7 @@ export function PedidosDataTable({
       columnVisibility,
       pagination: {
         pageIndex: currentPage,
-        pageSize: 10,
+        pageSize: pageSize,
       },
     },
   })
@@ -501,28 +505,22 @@ export function PedidosDataTable({
     <div className="w-full space-y-4 px-4 lg:px-6">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2 flex-1 flex-wrap">
-          <div className="relative w-[150px]">
-            <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-            <Input
-              placeholder="Filtrar por ID..."
-              value={(table.getColumn("idPedido")?.getFilterValue() as string) ?? ""}
-              onChange={(event) =>
-                table.getColumn("idPedido")?.setFilterValue(event.target.value)
-              }
-              className="pl-9"
-            />
-          </div>
-          <div className="relative w-[200px]">
-            <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-            <Input
-              placeholder="Filtrar por cliente..."
-              value={(table.getColumn("pessoaNome")?.getFilterValue() as string) ?? ""}
-              onChange={(event) =>
-                table.getColumn("pessoaNome")?.setFilterValue(event.target.value)
-              }
-              className="pl-9"
-            />
-          </div>
+          <Input
+            placeholder="Filtrar por ID..."
+            value={(table.getColumn("idPedido")?.getFilterValue() as string) ?? ""}
+            onChange={(event) =>
+              table.getColumn("idPedido")?.setFilterValue(event.target.value)
+            }
+            className="w-[150px]"
+          />
+          <Input
+            placeholder="Filtrar por Cliente..."
+            value={(table.getColumn("pessoaNome")?.getFilterValue() as string) ?? ""}
+            onChange={(event) =>
+              table.getColumn("pessoaNome")?.setFilterValue(event.target.value)
+            }
+            className="w-[200px]"
+          />
           <div className="relative w-40">
             <Select
               value={(table.getColumn("status")?.getFilterValue() as string) ?? "todos"}
@@ -665,16 +663,36 @@ export function PedidosDataTable({
       </div>
 
       <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          {totalElements > 0 ? (
-            <>
-              Mostrando {currentPage * 10 + 1} a{" "}
-              {Math.min((currentPage + 1) * 10, totalElements)} de{" "}
-              {totalElements} pedidos
-            </>
-          ) : (
-            "Nenhum pedido encontrado"
-          )}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium">Mostrar</p>
+            <Select
+              value={pageSize.toString()}
+              onValueChange={(value) => onPageSizeChange(Number(value))}
+            >
+              <SelectTrigger className="h-8 w-[70px]">
+                <SelectValue>{pageSize}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {totalElements > 0 ? (
+              <>
+                Mostrando {currentPage * pageSize + 1} a{" "}
+                {Math.min((currentPage + 1) * pageSize, totalElements)} de{" "}
+                {totalElements} pedidos
+              </>
+            ) : (
+              "Nenhum pedido encontrado"
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">

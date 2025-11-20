@@ -34,6 +34,7 @@ interface PaginatedResponse {
 export default function ProdutosPage() {
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(10)
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
@@ -41,16 +42,16 @@ export default function ProdutosPage() {
   const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
-    fetchProdutos(page, searchTerm)
-  }, [page, searchTerm])
+    fetchProdutos(page, searchTerm, pageSize)
+  }, [page, searchTerm, pageSize])
 
-  const fetchProdutos = async (pageNumber: number, search: string = "") => {
+  const fetchProdutos = async (pageNumber: number, search: string = "", size: number = 10) => {
     setIsLoading(true)
     setError(null)
     try {
       const endpoint = search
-        ? `/produtos/buscar?nome=${encodeURIComponent(search)}&page=${pageNumber}&size=10`
-        : `/produtos?page=${pageNumber}&size=10`
+        ? `/produtos/buscar?nome=${encodeURIComponent(search)}&page=${pageNumber}&size=${size}`
+        : `/produtos?page=${pageNumber}&size=${size}`
       
       const response = await api.get<PaginatedResponse>(endpoint)
 
@@ -74,11 +75,16 @@ export default function ProdutosPage() {
   }
 
   const handleRefresh = () => {
-    fetchProdutos(page, searchTerm)
+    fetchProdutos(page, searchTerm, pageSize)
   }
 
   const handleSearch = (term: string) => {
     setSearchTerm(term)
+    setPage(0)
+  }
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize)
     setPage(0)
   }
 
@@ -109,6 +115,8 @@ export default function ProdutosPage() {
                 onRefresh={handleRefresh}
                 onSearch={handleSearch}
                 searchTerm={searchTerm}
+                pageSize={pageSize}
+                onPageSizeChange={handlePageSizeChange}
               />
             </div>
           </div>

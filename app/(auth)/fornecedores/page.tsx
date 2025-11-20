@@ -43,6 +43,7 @@ interface PaginatedResponse {
 export default function FornecedoresPage() {
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([])
   const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(10)
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
@@ -50,36 +51,31 @@ export default function FornecedoresPage() {
   const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
-    fetchFornecedores(page, searchTerm)
-  }, [page, searchTerm])
+    fetchFornecedores(page, searchTerm, pageSize)
+  }, [page, searchTerm, pageSize])
 
-  const fetchFornecedores = async (pageNumber: number, search: string = "") => {
+  const fetchFornecedores = async (pageNumber: number, search: string = "", size: number = 10) => {
     setIsLoading(true)
     setError(null)
     try {
       let response: { data: PaginatedResponse };
       
       if (search) {
-        // Usar endpoint de busca - buscar mais resultados para filtrar por categoria
         response = await api.get<PaginatedResponse>(
           `/pessoas/buscar?name=${encodeURIComponent(search)}&page=${pageNumber}&size=50`
         )
         
-        // Filtrar apenas fornecedores
         const fornecedoresData = response.data.content.filter((p: Fornecedor) => p.categoria === "FORNECEDOR")
         
-        // Calcular paginação local
-        const pageSize = 10
         const start = 0
-        const end = Math.min(pageSize, fornecedoresData.length)
+        const end = Math.min(size, fornecedoresData.length)
         
         setFornecedores(fornecedoresData.slice(start, end))
         setTotalElements(fornecedoresData.length)
-        setTotalPages(Math.ceil(fornecedoresData.length / pageSize))
+        setTotalPages(Math.ceil(fornecedoresData.length / size))
       } else {
-        // Usar endpoint direto de fornecedores
         response = await api.get<PaginatedResponse>(
-          `/fornecedores?page=${pageNumber}&size=10`
+          `/fornecedores?page=${pageNumber}&size=${size}`
         )
         
         setFornecedores(response.data.content)
@@ -103,11 +99,16 @@ export default function FornecedoresPage() {
   }
 
   const handleRefresh = () => {
-    fetchFornecedores(page, searchTerm)
+    fetchFornecedores(page, searchTerm, pageSize)
   }
 
   const handleSearch = (term: string) => {
     setSearchTerm(term)
+    setPage(0)
+  }
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize)
     setPage(0)
   }
 
@@ -138,6 +139,8 @@ export default function FornecedoresPage() {
                 onRefresh={handleRefresh}
                 onSearch={handleSearch}
                 searchTerm={searchTerm}
+                pageSize={pageSize}
+                onPageSizeChange={handlePageSizeChange}
               />
             </div>
           </div>

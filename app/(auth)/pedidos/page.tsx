@@ -48,22 +48,21 @@ interface PaginatedResponse {
 export default function PedidosPage() {
   const [pedidos, setPedidos] = useState<Pedido[]>([])
   const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(10)
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchPedidos(page)
-  }, [page])
+    fetchPedidos(page, pageSize);
+  }, [page, pageSize]);
 
-  const fetchPedidos = async (pageNumber: number) => {
+  const fetchPedidos = async (pageNumber: number, size: number = 10) => {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await api.get<PaginatedResponse>(
-        `/pedidos?page=${pageNumber}&size=10`
-      )
+      const response = await api.get<PaginatedResponse>(`/pedidos?page=${pageNumber}&size=${size}`)
 
       // Buscar nomes de pessoas e funcionários
       const pedidosComNomes = await Promise.all(
@@ -137,7 +136,12 @@ export default function PedidosPage() {
   }
 
   const handleRefresh = () => {
-    fetchPedidos(page)
+    fetchPedidos(page, pageSize)
+  }
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize)
+    setPage(0)
   }
 
   return (
@@ -165,6 +169,8 @@ export default function PedidosPage() {
             isLoading={isLoading}
             onPageChange={setPage}
             onRefresh={handleRefresh}
+            pageSize={pageSize}
+            onPageSizeChange={handlePageSizeChange}
           />
         </div>
       </div>

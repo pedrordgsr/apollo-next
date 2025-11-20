@@ -219,6 +219,10 @@ interface PessoasDataTableProps {
   isLoading: boolean
   onPageChange: (page: number) => void
   onRefresh: () => void
+  onSearch: (term: string) => void
+  searchTerm: string
+  pageSize: number
+  onPageSizeChange: (size: number) => void
 }
 
 export function PessoasDataTable({
@@ -228,6 +232,10 @@ export function PessoasDataTable({
   totalElements,
   isLoading,
   onPageChange,
+  onSearch,
+  searchTerm,
+  pageSize,
+  onPageSizeChange,
 }: PessoasDataTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "id", desc: false }
@@ -237,6 +245,23 @@ export function PessoasDataTable({
   )
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({})
+  const [localSearchTerm, setLocalSearchTerm] = React.useState(searchTerm)
+
+  // Debounce para a busca
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localSearchTerm !== searchTerm) {
+        onSearch(localSearchTerm)
+      }
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [localSearchTerm])
+
+  // Sincronizar com searchTerm externo
+  React.useEffect(() => {
+    setLocalSearchTerm(searchTerm)
+  }, [searchTerm])
 
   const columns = React.useMemo(() => createColumns(), [])
 
@@ -271,20 +296,18 @@ export function PessoasDataTable({
     data,
     columns,
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     manualPagination: true,
+    manualFiltering: true,
     pageCount: totalPages,
     state: {
       sorting,
-      columnFilters,
       columnVisibility,
       pagination: {
         pageIndex: currentPage,
-        pageSize: 10,
+        pageSize: pageSize,
       },
     },
   })
@@ -296,22 +319,9 @@ export function PessoasDataTable({
           <div className="relative flex-1 max-w-sm">
             <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Filtrar por nome..."
-              value={(table.getColumn("nome")?.getFilterValue() as string) ?? ""}
-              onChange={(event) =>
-                table.getColumn("nome")?.setFilterValue(event.target.value)
-              }
-              className="pl-9"
-            />
-          </div>
-          <div className="relative flex-1 max-w-[200px]">
-            <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-            <Input
-              placeholder="Filtrar por CPF/CNPJ..."
-              value={(table.getColumn("cpfCnpj")?.getFilterValue() as string) ?? ""}
-              onChange={(event) =>
-                table.getColumn("cpfCnpj")?.setFilterValue(event.target.value)
-              }
+              placeholder="Buscar pessoa por nome..."
+              value={localSearchTerm}
+              onChange={(event) => setLocalSearchTerm(event.target.value)}
               className="pl-9"
             />
           </div>
@@ -415,16 +425,36 @@ export function PessoasDataTable({
       </div>
 
       <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          {totalElements > 0 ? (
-            <>
-              Mostrando {currentPage * 10 + 1} a{" "}
-              {Math.min((currentPage + 1) * 10, totalElements)} de{" "}
-              {totalElements} pessoas
-            </>
-          ) : (
-            "Nenhuma pessoa encontrada"
-          )}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium">Mostrar</p>
+            <Select
+              value={pageSize.toString()}
+              onValueChange={(value) => onPageSizeChange(Number(value))}
+            >
+              <SelectTrigger className="h-8 w-[70px]">
+                <SelectValue>{pageSize}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {totalElements > 0 ? (
+              <>
+                Mostrando {currentPage * pageSize + 1} a{" "}
+                {Math.min((currentPage + 1) * pageSize, totalElements)} de{" "}
+                {totalElements} pessoas
+              </>
+            ) : (
+              "Nenhuma pessoa encontrada"
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
