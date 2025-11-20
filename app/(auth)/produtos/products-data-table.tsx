@@ -217,11 +217,11 @@ function StockCell({ produto, onRefresh }: StockCellProps) {
                 <p className="text-base font-semibold mt-4">
                   {difference > 0 ? (
                     <span className="text-green-600">
-                      ➕ Adicionar {amount} {amount === 1 ? "unidade" : "unidades"}
+                      + Adicionar {amount} {amount === 1 ? "unidade" : "unidades"}
                     </span>
                   ) : (
                     <span className="text-red-600">
-                      ➖ Remover {amount} {amount === 1 ? "unidade" : "unidades"}
+                      - Remover {amount} {amount === 1 ? "unidade" : "unidades"}
                     </span>
                   )}
                 </p>
