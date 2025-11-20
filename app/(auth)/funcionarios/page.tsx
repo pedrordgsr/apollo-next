@@ -50,22 +50,45 @@ export default function FuncionariosPage() {
   const [totalElements, setTotalElements] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
-    fetchFuncionarios(page)
-  }, [page])
+    fetchFuncionarios(page, searchTerm)
+  }, [page, searchTerm])
 
-  const fetchFuncionarios = async (pageNumber: number) => {
+  const fetchFuncionarios = async (pageNumber: number, search: string = "") => {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await api.get<PaginatedResponse>(
-        `/funcionarios?page=${pageNumber}&size=10`
-      )
-
-      setFuncionarios(response.data.content)
-      setTotalPages(response.data.totalPages)
-      setTotalElements(response.data.totalElements)
+      let response: { data: PaginatedResponse };
+      
+      if (search) {
+        // Usar endpoint de busca - buscar mais resultados para filtrar por categoria
+        response = await api.get<PaginatedResponse>(
+          `/pessoas/buscar?name=${encodeURIComponent(search)}&page=${pageNumber}&size=50`
+        )
+        
+        // Filtrar apenas funcionários
+        const funcionariosData = response.data.content.filter((p: Funcionario) => p.categoria === "FUNCIONARIO")
+        
+        // Calcular paginação local
+        const pageSize = 10
+        const start = 0
+        const end = Math.min(pageSize, funcionariosData.length)
+        
+        setFuncionarios(funcionariosData.slice(start, end))
+        setTotalElements(funcionariosData.length)
+        setTotalPages(Math.ceil(funcionariosData.length / pageSize))
+      } else {
+        // Usar endpoint direto de funcionários
+        response = await api.get<PaginatedResponse>(
+          `/funcionarios?page=${pageNumber}&size=10`
+        )
+        
+        setFuncionarios(response.data.content)
+        setTotalElements(response.data.totalElements)
+        setTotalPages(response.data.totalPages)
+      }
     } catch (err) {
       if (err && typeof err === 'object' && 'response' in err) {
         const axiosError = err as { response?: { status?: number; data?: { message?: string } } }
@@ -83,7 +106,12 @@ export default function FuncionariosPage() {
   }
 
   const handleRefresh = () => {
-    fetchFuncionarios(page)
+    fetchFuncionarios(page, searchTerm)
+  }
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term)
+    setPage(0)
   }
 
   return (
@@ -111,6 +139,8 @@ export default function FuncionariosPage() {
                 isLoading={isLoading}
                 onPageChange={setPage}
                 onRefresh={handleRefresh}
+                onSearch={handleSearch}
+                searchTerm={searchTerm}
               />
             </div>
           </div>

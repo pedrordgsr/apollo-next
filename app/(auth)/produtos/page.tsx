@@ -38,18 +38,21 @@ export default function ProdutosPage() {
   const [totalElements, setTotalElements] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
-    fetchProdutos(page)
-  }, [page])
+    fetchProdutos(page, searchTerm)
+  }, [page, searchTerm])
 
-  const fetchProdutos = async (pageNumber: number) => {
+  const fetchProdutos = async (pageNumber: number, search: string = "") => {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await api.get<PaginatedResponse>(
-        `/produtos?page=${pageNumber}&size=10`
-      )
+      const endpoint = search
+        ? `/produtos/buscar?nome=${encodeURIComponent(search)}&page=${pageNumber}&size=10`
+        : `/produtos?page=${pageNumber}&size=10`
+      
+      const response = await api.get<PaginatedResponse>(endpoint)
 
       setProdutos(response.data.content)
       setTotalPages(response.data.totalPages)
@@ -71,7 +74,12 @@ export default function ProdutosPage() {
   }
 
   const handleRefresh = () => {
-    fetchProdutos(page)
+    fetchProdutos(page, searchTerm)
+  }
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term)
+    setPage(0)
   }
 
   return (
@@ -99,6 +107,8 @@ export default function ProdutosPage() {
                 isLoading={isLoading}
                 onPageChange={setPage}
                 onRefresh={handleRefresh}
+                onSearch={handleSearch}
+                searchTerm={searchTerm}
               />
             </div>
           </div>

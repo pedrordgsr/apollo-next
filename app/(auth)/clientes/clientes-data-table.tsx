@@ -293,6 +293,8 @@ interface ClientesDataTableProps {
   isLoading: boolean
   onPageChange: (page: number) => void
   onRefresh: () => void
+  onSearch: (term: string) => void
+  searchTerm: string
 }
 
 export function ClientesDataTable({
@@ -303,6 +305,8 @@ export function ClientesDataTable({
   isLoading,
   onPageChange,
   onRefresh,
+  onSearch,
+  searchTerm,
 }: ClientesDataTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "id", desc: false }
@@ -312,6 +316,23 @@ export function ClientesDataTable({
   )
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({})
+  const [localSearchTerm, setLocalSearchTerm] = React.useState(searchTerm)
+
+  // Debounce para a busca
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localSearchTerm !== searchTerm) {
+        onSearch(localSearchTerm)
+      }
+    }, 500) // 500ms de debounce
+
+    return () => clearTimeout(timer)
+  }, [localSearchTerm])
+
+  // Sincronizar com searchTerm externo
+  React.useEffect(() => {
+    setLocalSearchTerm(searchTerm)
+  }, [searchTerm])
 
   const columns = React.useMemo(() => createColumns(onRefresh), [onRefresh])
 
@@ -347,16 +368,14 @@ export function ClientesDataTable({
     data,
     columns,
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     manualPagination: true,
+    manualFiltering: true,
     pageCount: totalPages,
     state: {
       sorting,
-      columnFilters,
       columnVisibility,
       pagination: {
         pageIndex: currentPage,
@@ -372,22 +391,9 @@ export function ClientesDataTable({
           <div className="relative flex-1 max-w-sm">
             <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Filtrar por nome..."
-              value={(table.getColumn("nome")?.getFilterValue() as string) ?? ""}
-              onChange={(event) =>
-                table.getColumn("nome")?.setFilterValue(event.target.value)
-              }
-              className="pl-9"
-            />
-          </div>
-          <div className="relative flex-1 max-w-[200px]">
-            <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-            <Input
-              placeholder="Filtrar por CPF/CNPJ..."
-              value={(table.getColumn("cpfCnpj")?.getFilterValue() as string) ?? ""}
-              onChange={(event) =>
-                table.getColumn("cpfCnpj")?.setFilterValue(event.target.value)
-              }
+              placeholder="Buscar cliente por nome..."
+              value={localSearchTerm}
+              onChange={(event) => setLocalSearchTerm(event.target.value)}
               className="pl-9"
             />
           </div>

@@ -47,22 +47,45 @@ export default function FornecedoresPage() {
   const [totalElements, setTotalElements] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
-    fetchFornecedores(page)
-  }, [page])
+    fetchFornecedores(page, searchTerm)
+  }, [page, searchTerm])
 
-  const fetchFornecedores = async (pageNumber: number) => {
+  const fetchFornecedores = async (pageNumber: number, search: string = "") => {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await api.get<PaginatedResponse>(
-        `/fornecedores?page=${pageNumber}&size=10`
-      )
-
-      setFornecedores(response.data.content)
-      setTotalPages(response.data.totalPages)
-      setTotalElements(response.data.totalElements)
+      let response: { data: PaginatedResponse };
+      
+      if (search) {
+        // Usar endpoint de busca - buscar mais resultados para filtrar por categoria
+        response = await api.get<PaginatedResponse>(
+          `/pessoas/buscar?name=${encodeURIComponent(search)}&page=${pageNumber}&size=50`
+        )
+        
+        // Filtrar apenas fornecedores
+        const fornecedoresData = response.data.content.filter((p: Fornecedor) => p.categoria === "FORNECEDOR")
+        
+        // Calcular paginação local
+        const pageSize = 10
+        const start = 0
+        const end = Math.min(pageSize, fornecedoresData.length)
+        
+        setFornecedores(fornecedoresData.slice(start, end))
+        setTotalElements(fornecedoresData.length)
+        setTotalPages(Math.ceil(fornecedoresData.length / pageSize))
+      } else {
+        // Usar endpoint direto de fornecedores
+        response = await api.get<PaginatedResponse>(
+          `/fornecedores?page=${pageNumber}&size=10`
+        )
+        
+        setFornecedores(response.data.content)
+        setTotalElements(response.data.totalElements)
+        setTotalPages(response.data.totalPages)
+      }
     } catch (err) {
       if (err && typeof err === 'object' && 'response' in err) {
         const axiosError = err as { response?: { status?: number; data?: { message?: string } } }
@@ -80,7 +103,12 @@ export default function FornecedoresPage() {
   }
 
   const handleRefresh = () => {
-    fetchFornecedores(page)
+    fetchFornecedores(page, searchTerm)
+  }
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term)
+    setPage(0)
   }
 
   return (
@@ -108,6 +136,8 @@ export default function FornecedoresPage() {
                 isLoading={isLoading}
                 onPageChange={setPage}
                 onRefresh={handleRefresh}
+                onSearch={handleSearch}
+                searchTerm={searchTerm}
               />
             </div>
           </div>

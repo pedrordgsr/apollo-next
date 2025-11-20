@@ -47,22 +47,45 @@ export default function ClientesPage() {
   const [totalElements, setTotalElements] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
-    fetchClientes(page)
-  }, [page])
+    fetchClientes(page, searchTerm)
+  }, [page, searchTerm])
 
-  const fetchClientes = async (pageNumber: number) => {
+  const fetchClientes = async (pageNumber: number, search: string = "") => {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await api.get<PaginatedResponse>(
-        `/clientes?page=${pageNumber}&size=10`
-      )
-
-      setClientes(response.data.content)
-      setTotalPages(response.data.totalPages)
-      setTotalElements(response.data.totalElements)
+      let response: { data: PaginatedResponse };
+      
+      if (search) {
+        // Usar endpoint de busca - buscar mais resultados para filtrar por categoria
+        response = await api.get<PaginatedResponse>(
+          `/pessoas/buscar?name=${encodeURIComponent(search)}&page=${pageNumber}&size=50`
+        )
+        
+        // Filtrar apenas clientes
+        const clientesData = response.data.content.filter((p: Cliente) => p.categoria === "CLIENTE")
+        
+        // Calcular paginação local
+        const pageSize = 10
+        const start = 0 // Sempre mostrar do início pois já estamos na página correta do backend
+        const end = Math.min(pageSize, clientesData.length)
+        
+        setClientes(clientesData.slice(start, end))
+        setTotalElements(clientesData.length)
+        setTotalPages(Math.ceil(clientesData.length / pageSize))
+      } else {
+        // Usar endpoint direto de clientes
+        response = await api.get<PaginatedResponse>(
+          `/clientes?page=${pageNumber}&size=10`
+        )
+        
+        setClientes(response.data.content)
+        setTotalElements(response.data.totalElements)
+        setTotalPages(response.data.totalPages)
+      }
     } catch (err) {
       if (err && typeof err === 'object' && 'response' in err) {
         const axiosError = err as { response?: { status?: number; data?: { message?: string } } }
@@ -80,7 +103,12 @@ export default function ClientesPage() {
   }
 
   const handleRefresh = () => {
-    fetchClientes(page)
+    fetchClientes(page, searchTerm)
+  }
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term)
+    setPage(0) // Voltar para primeira página ao buscar
   }
 
   return (
@@ -108,6 +136,8 @@ export default function ClientesPage() {
                 isLoading={isLoading}
                 onPageChange={setPage}
                 onRefresh={handleRefresh}
+                onSearch={handleSearch}
+                searchTerm={searchTerm}
               />
             </div>
           </div>
