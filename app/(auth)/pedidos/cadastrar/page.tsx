@@ -34,7 +34,6 @@ function CadastrarPedidoContent() {
   const [pedidoStatus, setPedidoStatus] = useState<string | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const [produtos, setProdutos] = useState<Produto[]>([])
   const [pessoas, setPessoas] = useState<Pessoa[]>([])
   const [funcionarioNome, setFuncionarioNome] = useState<string>("")
 
@@ -60,7 +59,6 @@ function CadastrarPedidoContent() {
 
   // Carregar dados auxiliares
   useEffect(() => {
-    fetchProdutos()
     fetchPessoas()
     
     // Buscar funcionário do localStorage
@@ -81,15 +79,6 @@ function CadastrarPedidoContent() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pedidoId])
-
-  const fetchProdutos = async () => {
-    try {
-      const response = await api.get("/produtos?page=0&size=1000")
-      setProdutos(response.data.content)
-    } catch {
-      toast.error("Erro ao carregar produtos")
-    }
-  }
 
   const fetchPessoas = async () => {
     try {
@@ -483,7 +472,6 @@ function CadastrarPedidoContent() {
             <ProdutoSelectorDialog
               open={showProdutoDialog}
               onOpenChange={setShowProdutoDialog}
-              produtos={produtos}
               tipo={formData.tipo}
               onConfirm={handleConfirmAddProduto}
             />

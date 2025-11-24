@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -13,12 +13,12 @@ import {
 } from "@/components/ui/alert-dialog"
 import { FieldLabel } from "@/components/ui/field"
 import { toast } from "sonner"
+import { api } from "@/lib/api"
 import type { Produto } from "./types"
 
 interface ProdutoSelectorDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  produtos: Produto[]
   tipo: "COMPRA" | "VENDA"
   onConfirm: (produto: Produto, quantidade: number, preco: number) => void
 }
@@ -26,7 +26,6 @@ interface ProdutoSelectorDialogProps {
 export function ProdutoSelectorDialog({
   open,
   onOpenChange,
-  produtos,
   tipo,
   onConfirm,
 }: ProdutoSelectorDialogProps) {
@@ -34,6 +33,43 @@ export function ProdutoSelectorDialog({
   const [selectedProduto, setSelectedProduto] = useState<Produto | null>(null)
   const [quantidade, setQuantidade] = useState(1)
   const [preco, setPreco] = useState(0)
+  const [produtosFiltrados, setProdutosFiltrados] = useState<Produto[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+
+  // Carregar produtos iniciais quando o dialog abre
+  useEffect(() => {
+    if (open && produtosFiltrados.length === 0) {
+      buscarProdutos("")
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
+  // Debounce para a busca
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      buscarProdutos(searchProduto)
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [searchProduto])
+
+  const buscarProdutos = async (search: string) => {
+    setIsSearching(true)
+    try {
+      const endpoint = search
+        ? `/produtos/buscar?nome=${encodeURIComponent(search)}&page=0&size=5`
+        : `/produtos?page=0&size=5`
+      
+      const response = await api.get<{ content: Produto[] }>(endpoint)
+      setProdutosFiltrados(response.data.content)
+    } catch (error) {
+      console.error("Erro ao buscar produtos:", error)
+      toast.error("Erro ao buscar produtos")
+      setProdutosFiltrados([])
+    } finally {
+      setIsSearching(false)
+    }
+  }
 
   const handleSelectProduto = (produto: Produto) => {
     // Não permite selecionar produtos inativos
@@ -84,12 +120,9 @@ export function ProdutoSelectorDialog({
       setSelectedProduto(null)
       setQuantidade(1)
       setPreco(0)
+      setProdutosFiltrados([])
     }
   }
-
-  const produtosFiltrados = produtos.filter((produto) =>
-    produto.nome.toLowerCase().includes(searchProduto.toLowerCase())
-  )
 
   const margem = selectedProduto && preco > 0
     ? ((preco - selectedProduto.precoCusto) / preco * 100).toFixed(2)
@@ -111,6 +144,11 @@ export function ProdutoSelectorDialog({
               onChange={(e) => setSearchProduto(e.target.value)}
               className="w-full"
             />
+            {isSearching && (
+              <div className="text-sm text-muted-foreground mt-1">
+                Buscando produtos...
+              </div>
+            )}
           </div>
 
           {/* Tabela de Produtos */}
@@ -125,7 +163,16 @@ export function ProdutoSelectorDialog({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {produtosFiltrados.length > 0 ? (
+                {isSearching && produtosFiltrados.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={4}
+                      className="text-center py-8 text-muted-foreground"
+                    >
+                      Buscando produtos...
+                    </TableCell>
+                  </TableRow>
+                ) : produtosFiltrados.length > 0 ? (
                   produtosFiltrados.map((produto) => {
                     const isInativo = produto.status !== "ATIVO"
                     return (
