@@ -6,7 +6,7 @@ import Link from "next/link";
 
 export default function RelatoriosPage() {
   return (
-    <div className="container mx-auto py-6 space-y-8">
+    <div className="flex flex-1 flex-col py-4 md:py-6 px-4 lg:px-6 space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Relatórios</h1>
         <p className="text-muted-foreground">

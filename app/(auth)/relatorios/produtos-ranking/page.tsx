@@ -122,7 +122,7 @@ export default function ProdutosRankingPage() {
   const ticketMedioGeral = produtos.length > 0 ? totais.valorTotal / totais.quantidadeTotal : 0;
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="flex flex-1 flex-col py-4 md:py-6 px-4 lg:px-6 space-y-6">
       <div className="print:hidden">
         <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
           Ranking de Produtos

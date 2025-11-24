@@ -70,7 +70,7 @@ export default function ComprasConsolidadoPage() {
   };
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="flex flex-1 flex-col py-4 md:py-6 px-4 lg:px-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Relatório de Compras Consolidado</h1>
         <p className="text-muted-foreground">
