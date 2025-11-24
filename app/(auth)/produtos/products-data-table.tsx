@@ -205,16 +205,16 @@ function StockCell({ produto, onRefresh }: StockCellProps) {
             <AlertDialogTitle>Confirmar alteração de estoque</AlertDialogTitle>
             <AlertDialogDescription>
               <div className="space-y-2">
-                <p>
+                <div>
                   <strong>Produto:</strong> {produto.nome}
-                </p>
-                <p>
+                </div>
+                <div>
                   <strong>Estoque atual:</strong> {currentStock} unidades
-                </p>
-                <p>
+                </div>
+                <div>
                   <strong>Novo estoque:</strong> {quantity} unidades
-                </p>
-                <p className="text-base font-semibold mt-4">
+                </div>
+                <div className="text-base font-semibold mt-4">
                   {difference > 0 ? (
                     <span className="text-green-600">
                       + Adicionar {amount} {amount === 1 ? "unidade" : "unidades"}
@@ -224,7 +224,7 @@ function StockCell({ produto, onRefresh }: StockCellProps) {
                       - Remover {amount} {amount === 1 ? "unidade" : "unidades"}
                     </span>
                   )}
-                </p>
+                </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
