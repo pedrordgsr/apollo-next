@@ -99,18 +99,22 @@ function CadastrarPedidoContent() {
         api.get("/fornecedores?page=0&size=1000"),
       ])
       
-      // Combinar clientes e fornecedores com a propriedade 'tipo'
-      const clientes = clientesResponse.data.content.map((c: { id: number; nome: string }) => ({
-        id: c.id,
-        nome: c.nome,
-        tipo: "CLIENTE"
-      }))
+      // Combinar clientes e fornecedores com a propriedade 'tipo', filtrando apenas os ativos
+      const clientes = clientesResponse.data.content
+        .filter((c: { id: number; nome: string; status: string }) => c.status === "ATIVO")
+        .map((c: { id: number; nome: string }) => ({
+          id: c.id,
+          nome: c.nome,
+          tipo: "CLIENTE"
+        }))
       
-      const fornecedores = fornecedoresResponse.data.content.map((f: { id: number; nome: string }) => ({
-        id: f.id,
-        nome: f.nome,
-        tipo: "FORNECEDOR"
-      }))
+      const fornecedores = fornecedoresResponse.data.content
+        .filter((f: { id: number; nome: string; status: string }) => f.status === "ATIVO")
+        .map((f: { id: number; nome: string }) => ({
+          id: f.id,
+          nome: f.nome,
+          tipo: "FORNECEDOR"
+        }))
       
       setPessoas([...clientes, ...fornecedores])
     } catch {

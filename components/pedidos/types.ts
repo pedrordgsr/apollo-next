@@ -21,6 +21,7 @@ export interface Produto {
   precoCusto: number
   precoVenda: number
   qntdEstoque: number
+  status: string
 }
 
 export interface Pessoa {

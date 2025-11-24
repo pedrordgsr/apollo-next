@@ -36,6 +36,11 @@ export function ProdutoSelectorDialog({
   const [preco, setPreco] = useState(0)
 
   const handleSelectProduto = (produto: Produto) => {
+    // Não permite selecionar produtos inativos
+    if (produto.status !== "ATIVO") {
+      toast.error("Este produto está inativo e não pode ser selecionado")
+      return
+    }
     setSelectedProduto(produto)
     setQuantidade(1)
     setPreco(tipo === "COMPRA" ? produto.precoCusto : produto.precoVenda)
@@ -92,12 +97,12 @@ export function ProdutoSelectorDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
-      <AlertDialogContent className="max-w-4xl max-h-[80vh]">
+      <AlertDialogContent className="max-w-6xl w-full max-h-[90vh] flex flex-col overflow-hidden">
         <AlertDialogHeader>
           <AlertDialogTitle>Selecionar Produto</AlertDialogTitle>
         </AlertDialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto flex-1">
           {/* Campo de Busca */}
           <div>
             <Input
@@ -121,34 +126,46 @@ export function ProdutoSelectorDialog({
               </TableHeader>
               <TableBody>
                 {produtosFiltrados.length > 0 ? (
-                  produtosFiltrados.map((produto) => (
-                    <TableRow
-                      key={produto.id}
-                      className={`cursor-pointer hover:bg-muted ${
-                        selectedProduto?.id === produto.id ? "bg-muted" : ""
-                      }`}
-                      onClick={() => handleSelectProduto(produto)}
-                    >
-                      <TableCell className="font-medium">
-                        {produto.nome}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        R$ {produto.precoCusto.toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        R$ {produto.precoVenda.toFixed(2)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Badge
-                          variant={
-                            produto.qntdEstoque > 0 ? "default" : "destructive"
-                          }
-                        >
-                          {produto.qntdEstoque}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  produtosFiltrados.map((produto) => {
+                    const isInativo = produto.status !== "ATIVO"
+                    return (
+                      <TableRow
+                        key={produto.id}
+                        className={`${
+                          isInativo
+                            ? "text-muted-foreground cursor-not-allowed opacity-60"
+                            : "cursor-pointer hover:bg-muted"
+                        } ${
+                          selectedProduto?.id === produto.id ? "bg-muted" : ""
+                        }`}
+                        onClick={() => handleSelectProduto(produto)}
+                      >
+                        <TableCell className="font-medium">
+                          {produto.nome}
+                          {isInativo && (
+                            <Badge variant="secondary" className="ml-2 text-xs">
+                              INATIVO
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          R$ {produto.precoCusto.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          R$ {produto.precoVenda.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge
+                            variant={
+                              produto.qntdEstoque > 0 ? "default" : "destructive"
+                            }
+                          >
+                            {produto.qntdEstoque}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
                 ) : (
                   <TableRow>
                     <TableCell
