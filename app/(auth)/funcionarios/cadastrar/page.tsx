@@ -255,7 +255,6 @@ function CadastrarFuncionarioContent() {
                               value={formData.nome}
                               onChange={(e) => handleInputChange("nome", e.target.value)}
                               placeholder="Nome completo"
-                              required
                             />
                             {errors.nome && <FieldError>{errors.nome}</FieldError>}
                           </FieldContent>
@@ -270,7 +269,6 @@ function CadastrarFuncionarioContent() {
                                 value={formData.cpfcnpj}
                                 onChange={(e) => handleInputChange("cpfcnpj", e.target.value)}
                                 placeholder="000.000.000-00"
-                                required
                               />
                               {errors.cpfcnpj && <FieldError>{errors.cpfcnpj}</FieldError>}
                             </FieldContent>
@@ -284,7 +282,6 @@ function CadastrarFuncionarioContent() {
                                 value={formData.cargo}
                                 onChange={(e) => handleInputChange("cargo", e.target.value)}
                                 placeholder="Ex: Caixa, Gerente"
-                                required
                               />
                               {errors.cargo && <FieldError>{errors.cargo}</FieldError>}
                             </FieldContent>
@@ -300,7 +297,6 @@ function CadastrarFuncionarioContent() {
                                 value={formData.salario}
                                 onChange={(e) => handleInputChange("salario", e.target.value)}
                                 placeholder="0.00"
-                                required
                               />
                               {errors.salario && <FieldError>{errors.salario}</FieldError>}
                             </FieldContent>
@@ -316,7 +312,6 @@ function CadastrarFuncionarioContent() {
                                 value={formData.dataAdmissao}
                                 onChange={(e) => handleDataChange(e.target.value)}
                                 maxLength={10}
-                                required
                               />
                               {errors.dataAdmissao && <FieldError>{errors.dataAdmissao}</FieldError>}
                             </FieldContent>

@@ -254,7 +254,6 @@ function CadastrarClienteContent() {
                               value={formData.nome}
                               onChange={(e) => handleInputChange("nome", e.target.value)}
                               placeholder="Nome completo"
-                              required
                             />
                             {errors.nome && <FieldError>{errors.nome}</FieldError>}
                           </FieldContent>
@@ -296,7 +295,6 @@ function CadastrarClienteContent() {
                                     ? "000.000.000-00"
                                     : "00.000.000/0000-00"
                                 }
-                                required
                               />
                               {errors.cpfcnpj && <FieldError>{errors.cpfcnpj}</FieldError>}
                             </FieldContent>
@@ -320,7 +318,6 @@ function CadastrarClienteContent() {
                               <Select
                                 value={formData.genero || ""}
                                 onValueChange={(value) => handleInputChange("genero", value || undefined)}
-                                required
                               >
                                 <SelectTrigger>
                                   <SelectValue placeholder="Selecione" />

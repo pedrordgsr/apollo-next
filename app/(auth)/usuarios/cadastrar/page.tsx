@@ -366,7 +366,6 @@ function CadastrarUsuarioContent() {
                           value={formData.username}
                           onChange={(e) => handleInputChange("username", e.target.value)}
                           placeholder="Digite o nome de usuário"
-                          required
                         />
                         {errors.username && <FieldError>{errors.username}</FieldError>}
                       </FieldContent>

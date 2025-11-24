@@ -222,7 +222,6 @@ function CadastrarFornecedorContent() {
                               value={formData.nome}
                               onChange={(e) => handleInputChange("nome", e.target.value)}
                               placeholder="Nome completo"
-                              required
                             />
                             {errors.nome && <FieldError>{errors.nome}</FieldError>}
                           </FieldContent>
@@ -264,7 +263,6 @@ function CadastrarFornecedorContent() {
                                     ? "000.000.000-00"
                                     : "00.000.000/0000-00"
                                 }
-                                required
                               />
                               {errors.cpfcnpj && <FieldError>{errors.cpfcnpj}</FieldError>}
                             </FieldContent>
