@@ -113,41 +113,24 @@ function CadastrarClienteContent() {
       return
     }
 
+    // Validação de CPF/CNPJ duplicado
+    const cpfCnpjLimpo = formData.cpfcnpj.replace(/\D/g, "")
+    try {
+      const validationResponse = await api.get(`/pessoas/validar-cpf-cnpj?cpfcnpj=${cpfCnpjLimpo}`)
+      if (validationResponse.data.duplicated && !isEditing) {
+        const tipoPessoaLabel = formData.tipoPessoa === "FISICA" ? "CPF" : "CNPJ"
+        setErrors({ cpfcnpj: `Este ${tipoPessoaLabel} já está cadastrado no sistema` })
+        toast.error(`Este ${tipoPessoaLabel} já está cadastrado no sistema`)
+        return
+      }
+    } catch (validationError) {
+      console.error("Erro ao validar CPF/CNPJ:", validationError)
+      // Continua mesmo se houver erro na validação (pode ser problema de conectividade)
+    }
+
     setIsSaving(true)
     try {
       const cpfCnpjLimpo = formData.cpfcnpj.replace(/\D/g, "")
-      
-      // Verifica se o CPF/CNPJ já existe no banco
-      try {
-        // Busca todos os clientes (pode precisar ajustar o tamanho da página se houver muitos)
-        const checkResponse = await api.get(`/clientes?page=0&size=1000`)
-        const clientes = checkResponse.data.content || []
-        
-        // Verifica se existe outro cliente com o mesmo CPF/CNPJ
-        const cpfExistente = clientes.find((cliente: { cpfCnpj: string; id?: number }) => {
-          const cpfBanco = cliente.cpfCnpj?.replace(/\D/g, "")
-          // Se estiver editando, ignora o próprio cliente
-          if (isEditing && cliente.id?.toString() === clienteId) {
-            return false
-          }
-          return cpfBanco === cpfCnpjLimpo
-        })
-
-        if (cpfExistente) {
-          const tipoPessoaLabel = formData.tipoPessoa === "FISICA" ? "CPF" : "CNPJ"
-          toast.error(`Este ${tipoPessoaLabel} já está cadastrado no sistema`)
-          setErrors((prev) => ({
-            ...prev,
-            cpfcnpj: `Este ${tipoPessoaLabel} já está cadastrado`
-          }))
-          setIsSaving(false)
-          return
-        }
-      } catch (checkError) {
-        console.error("Erro ao verificar CPF/CNPJ:", checkError)
-        // Continue mesmo se houver erro na verificação (pode ser problema de conectividade)
-        // O backend deve ter sua própria validação de unicidade
-      }
       
       const payload = {
         nome: formData.nome,

@@ -113,6 +113,21 @@ function CadastrarFornecedorContent() {
       return
     }
 
+    // Validação de CPF/CNPJ duplicado
+    const cpfCnpjLimpo = formData.cpfcnpj.replace(/\D/g, "")
+    try {
+      const validationResponse = await api.get(`/pessoas/validar-cpf-cnpj?cpfcnpj=${cpfCnpjLimpo}`)
+      if (validationResponse.data.duplicated && !isEditing) {
+        const tipoPessoaLabel = formData.tipoPessoa === "FISICA" ? "CPF" : "CNPJ"
+        setErrors({ cpfcnpj: `Este ${tipoPessoaLabel} já está cadastrado no sistema` })
+        toast.error(`Este ${tipoPessoaLabel} já está cadastrado no sistema`)
+        return
+      }
+    } catch (validationError) {
+      console.error("Erro ao validar CPF/CNPJ:", validationError)
+      // Continua mesmo se houver erro na validação (pode ser problema de conectividade)
+    }
+
     setIsSaving(true)
     try {
       const cpfCnpjLimpo = formData.cpfcnpj.replace(/\D/g, "")

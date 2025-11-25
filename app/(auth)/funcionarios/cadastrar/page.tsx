@@ -116,6 +116,20 @@ function CadastrarFuncionarioContent() {
       return
     }
 
+    // Validação de CPF duplicado
+    const cpfLimpo = formData.cpfcnpj.replace(/\D/g, "")
+    try {
+      const validationResponse = await api.get(`/pessoas/validar-cpf-cnpj?cpfcnpj=${cpfLimpo}`)
+      if (validationResponse.data.duplicated && !isEditing) {
+        setErrors({ cpfcnpj: "Este CPF já está cadastrado no sistema" })
+        toast.error("Este CPF já está cadastrado no sistema")
+        return
+      }
+    } catch (validationError) {
+      console.error("Erro ao validar CPF:", validationError)
+      // Continua mesmo se houver erro na validação (pode ser problema de conectividade)
+    }
+
     setIsSaving(true)
     try {
       // Converte a data de dd/mm/yyyy para ISO
