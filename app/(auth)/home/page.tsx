@@ -118,63 +118,61 @@ export default function Page() {
         // Buscar dados detalhados para o gráfico (últimos 90 dias)
         const data90DiasAtras = new Date(hoje);
         data90DiasAtras.setDate(hoje.getDate() - 90);
-        const dataInicio90 = data90DiasAtras.toLocaleDateString("pt-BR", { 
-          day: "2-digit", 
-          month: "2-digit", 
-          year: "numeric" 
-        });
 
-        // Buscar todos os clientes do período
-        const clientesResponse = await api.get("/relatorios/clientes", {
-          params: {
-            dataInicio: dataInicio90,
-            dataFim: dataFim,
-          },
-        });
-
-        // Buscar detalhes dos pedidos
-        interface PedidoDetalhado {
+        // Buscar todos os pedidos
+        interface Pedido {
           idPedido: number;
           dataEmissao: string;
           totalVenda: number;
-          status: string;
+          status: "ORCAMENTO" | "FATURADO" | "CANCELADO" | "NOTA_CANCELADA";
+          tipo: "COMPRA" | "VENDA";
         }
 
-        const todosPedidos: PedidoDetalhado[] = [];
-        for (const cliente of clientesResponse.data) {
+        interface PaginatedResponse {
+          content: Pedido[];
+          totalPages: number;
+        }
+
+        let todosPedidos: Pedido[] = [];
+        let currentPage = 0;
+        let hasMorePages = true;
+
+        // Buscar todas as páginas de pedidos
+        while (hasMorePages) {
           try {
-            const detalhesResponse = await api.get(
-              `/relatorios/clientes/${cliente.idPessoa}/detalhes`,
-              {
-                params: {
-                  dataInicio: dataInicio90,
-                  dataFim: dataFim,
-                },
-              }
-            );
-            todosPedidos.push(...detalhesResponse.data);
+            const response = await api.get<PaginatedResponse>(`/pedidos?page=${currentPage}&size=100`);
+            todosPedidos = [...todosPedidos, ...response.data.content];
+            currentPage++;
+            hasMorePages = currentPage < response.data.totalPages;
           } catch (error) {
-            console.error(`Erro ao buscar pedidos do cliente ${cliente.idPessoa}:`, error);
+            console.error(`Erro ao buscar pedidos página ${currentPage}:`, error);
+            hasMorePages = false;
           }
         }
 
-        // Agrupar pedidos faturados por data
+        // Filtrar pedidos de venda faturados dos últimos 90 dias
+        const pedidosFiltrados = todosPedidos.filter(p => {
+          if (p.status !== "FATURADO" || p.tipo !== "VENDA") return false;
+          
+          const dataPedido = new Date(p.dataEmissao);
+          return dataPedido >= data90DiasAtras && dataPedido <= hoje;
+        });
+
+        // Agrupar pedidos por data
         const pedidosPorData = new Map<string, { valor: number; quantidade: number }>();
         
-        todosPedidos
-          .filter(p => p.status === "FATURADO") // Apenas faturados
-          .forEach(pedido => {
-            const data = new Date(pedido.dataEmissao);
-            const dataKey = data.toISOString().split('T')[0]; // YYYY-MM-DD
-            
-            if (!pedidosPorData.has(dataKey)) {
-              pedidosPorData.set(dataKey, { valor: 0, quantidade: 0 });
-            }
-            
-            const registro = pedidosPorData.get(dataKey)!;
-            registro.valor += pedido.totalVenda;
-            registro.quantidade += 1;
-          });
+        pedidosFiltrados.forEach(pedido => {
+          const data = new Date(pedido.dataEmissao);
+          const dataKey = data.toISOString().split('T')[0]; // YYYY-MM-DD
+          
+          if (!pedidosPorData.has(dataKey)) {
+            pedidosPorData.set(dataKey, { valor: 0, quantidade: 0 });
+          }
+          
+          const registro = pedidosPorData.get(dataKey)!;
+          registro.valor += pedido.totalVenda;
+          registro.quantidade += 1;
+        });
 
         // Converter para array e ordenar por data
         const chartData = Array.from(pedidosPorData.entries())
